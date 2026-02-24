@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CodeModern - Problem Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5586e7",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "pastel-green": "#e6f4ea",
+                        "pastel-yellow": "#fef7e0",
+                        "pastel-red": "#fce8e6",
+                        "pastel-blue": "#e8f0fe",
+                        "pastel-purple": "#f3e8ff",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #f6f6f8;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md dark:bg-background-dark/80 dark:border-slate-800">
+<div class="max-w-[1440px] mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center gap-10">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-3xl font-bold">terminal</span>
+<h2 class="text-xl font-bold tracking-tight">CodeModern</h2>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-sm font-semibold text-primary" href="#">Problems</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Contests</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Discuss</a>
+<a class="text-sm font-medium text-slate-500 hover:text-primary transition-colors" href="#">Interview</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm w-64 focus:ring-2 focus:ring-primary/50 transition-all" placeholder="Search problems..." type="text"/>
+</div>
+<button class="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="User profile circular 3D avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRiNtXsFWFZZ3kvHvMjs_fXm7d88scliVhilJYE6GOW2BzBLG-X6D9GXEFghQU-PfKhi7zotpB2undOOR-D0csSeoag7OpBf4GHXvv1fABdgRlc7ogxgh67U15F5WsUdx8K1VJKaAVQyx_X7Bohi4U-23wS90o7jk4yr5FG6TWSSppG94ieIkCNJfS-nwEjI4RpyFLpJZ-1pRvfAnsjVNpAx48PeNUyibZCZ6pVIkQGTt9x5aktA6Ta7ckvvE8URJugjKXnOXaVAyJ"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1440px] mx-auto px-6 py-8">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Left Content: Problems & Hero -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Daily Challenge Hero -->
+<section class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#7a9ef2] p-8 text-white shadow-xl shadow-primary/20">
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div class="max-w-md">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-yellow-300">workspace_premium</span>
+<span class="text-xs font-bold uppercase tracking-widest text-white/80">Daily Challenge</span>
+</div>
+<h1 class="text-3xl font-bold mb-3">Longest Palindromic Substring</h1>
+<p class="text-white/80 mb-6 font-medium">Master string manipulation and dynamic programming to earn +10 XP and maintain your 12-day streak.</p>
+<div class="flex gap-3">
+<button class="bg-white text-primary px-6 py-2.5 rounded-lg font-bold hover:bg-slate-50 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-xl">play_arrow</span>
+                                    Solve Now
+                                </button>
+<button class="bg-white/20 backdrop-blur-sm text-white border border-white/30 px-6 py-2.5 rounded-lg font-bold hover:bg-white/30 transition-colors">
+                                    View Details
+                                </button>
+</div>
+</div>
+<div class="hidden md:block">
+<div class="radial-progress text-white/30" role="progressbar" style="--value:75; --size:10rem; --thickness: 8px;">
+<div class="flex flex-col items-center text-white">
+<span class="text-2xl font-bold">75%</span>
+<span class="text-[10px] uppercase font-bold tracking-tighter">Day Complete</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative shapes -->
+<div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+<div class="absolute right-20 top-0 w-32 h-32 bg-primary-focus/20 rounded-full blur-2xl"></div>
+</section>
+<!-- Filters & Problem Table -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-4 items-center justify-between">
+<div class="flex gap-3 overflow-x-auto pb-2 md:pb-0">
+<select class="select select-sm bg-slate-50 border-slate-200 rounded-lg font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
+<option disabled="" selected="">Difficulty</option>
+<option>Easy</option>
+<option>Medium</option>
+<option>Hard</option>
+</select>
+<select class="select select-sm bg-slate-50 border-slate-200 rounded-lg font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
+<option disabled="" selected="">Status</option>
+<option>Solved</option>
+<option>Unsolved</option>
+<option>Attempted</option>
+</select>
+<select class="select select-sm bg-slate-50 border-slate-200 rounded-lg font-medium text-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20">
+<option disabled="" selected="">Tags</option>
+<option>Arrays</option>
+<option>String</option>
+<option>DP</option>
+</select>
+</div>
+<button class="btn btn-sm btn-ghost text-slate-400 hover:text-primary">
+<span class="material-symbols-outlined">restart_alt</span>
+                            Reset
+                        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="table w-full">
+<thead>
+<tr class="text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800">
+<th class="bg-transparent">Status</th>
+<th class="bg-transparent">Title</th>
+<th class="bg-transparent">AI Recommend</th>
+<th class="bg-transparent">Difficulty</th>
+<th class="bg-transparent">Acceptance</th>
+</tr>
+</thead>
+<tbody>
+<!-- Row 1 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50">
+<td><span class="material-symbols-outlined text-green-500 fill-1">check_circle</span></td>
+<td>
+<div class="flex flex-col">
+<span class="font-bold text-slate-700 dark:text-slate-200">1. Two Sum</span>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">Array</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">Hash Table</span>
+</div>
+</div>
+</td>
+<td>
+<div class="badge bg-pastel-purple text-purple-600 border-none font-bold text-[10px] py-3 px-3">Interview Hot</div>
+</td>
+<td><span class="px-3 py-1 rounded-full bg-pastel-green text-green-700 font-bold text-xs">Easy</span></td>
+<td class="text-slate-500 font-medium">49.2%</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50">
+<td><span class="material-symbols-outlined text-slate-300">circle</span></td>
+<td>
+<div class="flex flex-col">
+<span class="font-bold text-slate-700 dark:text-slate-200">206. Reverse Linked List</span>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">Linked List</span>
+</div>
+</div>
+</td>
+<td>
+<div class="badge bg-primary/10 text-primary border-none font-bold text-[10px] py-3 px-3">Top Pick</div>
+</td>
+<td><span class="px-3 py-1 rounded-full bg-pastel-green text-green-700 font-bold text-xs">Easy</span></td>
+<td class="text-slate-500 font-medium">72.4%</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50">
+<td><span class="material-symbols-outlined text-orange-400">hourglass_empty</span></td>
+<td>
+<div class="flex flex-col">
+<span class="font-bold text-slate-700 dark:text-slate-200">102. Binary Tree Level Order Traversal</span>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">Tree</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">BFS</span>
+</div>
+</div>
+</td>
+<td>
+<div class="badge bg-pastel-yellow text-amber-700 border-none font-bold text-[10px] py-3 px-3">Weak Spot: Graphs</div>
+</td>
+<td><span class="px-3 py-1 rounded-full bg-pastel-yellow text-amber-700 font-bold text-xs">Medium</span></td>
+<td class="text-slate-500 font-medium">63.8%</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50">
+<td><span class="material-symbols-outlined text-slate-300">circle</span></td>
+<td>
+<div class="flex flex-col">
+<span class="font-bold text-slate-700 dark:text-slate-200">42. Trapping Rain Water</span>
+<div class="flex gap-1 mt-1">
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">Array</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 uppercase">Two Pointers</span>
+</div>
+</div>
+</td>
+<td>
+<div class="badge bg-slate-100 text-slate-500 border-none font-bold text-[10px] py-3 px-3">-</div>
+</td>
+<td><span class="px-3 py-1 rounded-full bg-pastel-red text-red-700 font-bold text-xs">Hard</span></td>
+<td class="text-slate-500 font-medium">58.9%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 flex justify-center bg-slate-50/50 dark:bg-slate-800/30">
+<div class="join">
+<button class="join-item btn btn-sm bg-white border-slate-200">«</button>
+<button class="join-item btn btn-sm bg-primary border-primary text-white">1</button>
+<button class="join-item btn btn-sm bg-white border-slate-200">2</button>
+<button class="join-item btn btn-sm bg-white border-slate-200">3</button>
+<button class="join-item btn btn-sm bg-white border-slate-200">»</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar: Stats & Progress -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Progress Stats Card -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+<h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span>
+                        Your Progress
+                    </h3>
+<div class="flex items-center gap-6 mb-8">
+<div class="radial-progress text-primary" role="progressbar" style="--value:12; --size:6rem; --thickness: 8px;">
+<div class="flex flex-col items-center">
+<span class="text-xl font-bold">145</span>
+<span class="text-[8px] uppercase font-bold text-slate-400">Solved</span>
+</div>
+</div>
+<div class="flex-1 space-y-3">
+<div class="flex justify-between items-center text-xs">
+<span class="font-bold text-green-600">Easy</span>
+<span class="font-medium text-slate-500">80/450</span>
+</div>
+<progress class="progress progress-success w-full h-1.5" max="450" value="80"></progress>
+<div class="flex justify-between items-center text-xs">
+<span class="font-bold text-amber-500">Medium</span>
+<span class="font-medium text-slate-500">50/600</span>
+</div>
+<progress class="progress progress-warning w-full h-1.5" max="600" value="50"></progress>
+<div class="flex justify-between items-center text-xs">
+<span class="font-bold text-red-500">Hard</span>
+<span class="font-medium text-slate-500">15/150</span>
+</div>
+<progress class="progress progress-error w-full h-1.5" max="150" value="15"></progress>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-pastel-blue rounded-xl text-center">
+<p class="text-[10px] font-bold text-primary uppercase mb-1">Streak</p>
+<p class="text-2xl font-bold text-slate-800">12 Days</p>
+</div>
+<div class="p-4 bg-pastel-green rounded-xl text-center">
+<p class="text-[10px] font-bold text-green-700 uppercase mb-1">Rank</p>
+<p class="text-2xl font-bold text-slate-800">Top 5%</p>
+</div>
+</div>
+</div>
+<!-- Category Mastery (Simplified visual representation) -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+<h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">radar</span>
+                        Mastery Map
+                    </h3>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-24 text-xs font-bold text-slate-500">Arrays</div>
+<div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 85%"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 text-xs font-bold text-slate-500">Strings</div>
+<div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-primary" style="width: 65%"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 text-xs font-bold text-slate-500">Graphs</div>
+<div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-primary/40" style="width: 30%"></div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-24 text-xs font-bold text-slate-500">DP</div>
+<div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+<div class="h-full bg-primary/60" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Upcoming Contests -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+<h3 class="text-lg font-bold mb-4 flex items-center justify-between">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">event</span>
+                            Contests
+                        </span>
+<a class="text-xs text-primary font-bold" href="#">View All</a>
+</h3>
+<div class="space-y-4">
+<div class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+<div class="w-12 h-12 rounded-lg bg-pastel-purple flex flex-col items-center justify-center text-purple-700">
+<span class="text-xs font-bold">OCT</span>
+<span class="text-lg font-bold -mt-1">24</span>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-700">Biweekly Contest 118</p>
+<p class="text-xs text-slate-400">09:30 AM • 1h 30m</p>
+</div>
+</div>
+<div class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+<div class="w-12 h-12 rounded-lg bg-pastel-blue flex flex-col items-center justify-center text-primary">
+<span class="text-xs font-bold">OCT</span>
+<span class="text-lg font-bold -mt-1">26</span>
+</div>
+<div>
+<p class="text-sm font-bold text-slate-700">Weekly Contest 368</p>
+<p class="text-xs text-slate-400">10:00 AM • 1h 30m</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<footer class="mt-12 py-12 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark">
+<div class="max-w-[1440px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-2 text-slate-400">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-bold">CodeModern © 2024</span>
+</div>
+<div class="flex gap-8">
+<a class="text-sm text-slate-500 hover:text-primary transition-colors" href="#">Help Center</a>
+<a class="text-sm text-slate-500 hover:text-primary transition-colors" href="#">Jobs</a>
+<a class="text-sm text-slate-500 hover:text-primary transition-colors" href="#">Terms</a>
+<a class="text-sm text-slate-500 hover:text-primary transition-colors" href="#">Privacy</a>
+</div>
+<div class="flex gap-4">
+<button class="btn btn-circle btn-sm btn-ghost text-slate-400">
+<span class="material-symbols-outlined">public</span>
+</button>
+<button class="btn btn-circle btn-sm btn-ghost text-slate-400">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</div>
+</footer>
+</body></html>

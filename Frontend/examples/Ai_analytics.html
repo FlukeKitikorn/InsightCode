@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Behavioral Analytics Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#5586e7",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#111621",
+                        "pastel-blue": "#dbeafe",
+                        "pastel-green": "#dcfce7",
+                        "pastel-purple": "#f3e8ff",
+                        "pastel-orange": "#ffedd5",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Space Grotesk", sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chart-gradient-blue { background: linear-gradient(180deg, #dbeafe 0%, rgba(219, 234, 254, 0) 100%); }
+        .chart-gradient-purple { background: linear-gradient(180deg, #f3e8ff 0%, rgba(243, 232, 255, 0) 100%); }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#0e121b] dark:text-white antialiased">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="w-64 border-r border-[#e8ebf3] dark:border-[#2a303c] bg-white dark:bg-[#191e24] flex flex-col justify-between p-4 shrink-0">
+<div class="flex flex-col gap-8">
+<div class="flex items-center gap-3 px-2">
+<div class="bg-primary rounded-lg p-2 text-white">
+<span class="material-symbols-outlined">psychology</span>
+</div>
+<div class="flex flex-col">
+<h1 class="text-[#0e121b] dark:text-white text-base font-bold leading-tight">CodeMind AI</h1>
+<p class="text-[#506795] dark:text-gray-400 text-xs font-normal">Behavioral Analysis</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="text-sm font-medium">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#506795] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">bar_chart</span>
+<span class="text-sm font-medium">Coding Stats</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#506795] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">grid_view</span>
+<span class="text-sm font-medium">Logic Heatmaps</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#506795] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">auto_awesome</span>
+<span class="text-sm font-medium">AI Insights</span>
+</a>
+<div class="h-px bg-[#e8ebf3] dark:bg-[#2a303c] my-4"></div>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#506795] dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+</div>
+<div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-primary/20" data-alt="User profile avatar with professional look" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAr4XpsQhR2a3zbxG-FTvAw-68v5V9JOsDdThUUjX-Ct7Vk2gegFN_ZPLHUUQrED3cGVVyD5b6xszB7uvEp79B-iYAaACxFODFS0baABq0BVOeCK1Y8vzH1rJCkWfQoQJaXV4ZmcRMWWMJ48ytGpfEHt8VgCLLMr7UvEO-0Qjmiou_r1X41biE-2BKuwFA_Kbf2DnZOxy5mVS46DCGm7sVtLvtpg1Pkae-NTIA6py6ml_4sCgCpMjkF49s4LWEuUuLdwqYDptWBzJbT");'></div>
+<div class="flex flex-col overflow-hidden">
+<p class="text-sm font-bold truncate">Alex Rivera</p>
+<p class="text-[10px] text-[#506795] uppercase tracking-wider">Senior Dev</p>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto">
+<!-- TopNavBar Component -->
+<header class="flex items-center justify-between bg-white dark:bg-[#191e24] border-b border-[#e8ebf3] dark:border-[#2a303c] px-8 py-4 sticky top-0 z-10">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-bold tracking-tight">Behavioral Dashboard</h2>
+<span class="px-2 py-1 rounded bg-pastel-green text-[#07883b] text-[10px] font-bold uppercase tracking-widest">Live Analysis</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#506795] text-lg">search</span>
+<input class="w-64 pl-10 pr-4 py-2 bg-background-light dark:bg-gray-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/50" placeholder="Search insights..."/>
+</div>
+<div class="flex gap-2">
+<button class="bg-primary text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">sync</span>
+                        Sync Active
+                    </button>
+<button class="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-[#0e121b] dark:text-white">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</div>
+</header>
+<div class="p-8 flex flex-col gap-8 max-w-[1200px] mx-auto w-full">
+<!-- Stats Overview -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm">
+<div class="flex justify-between items-start mb-2">
+<p class="text-[#506795] dark:text-gray-400 text-sm font-medium">Focus Score</p>
+<span class="text-primary material-symbols-outlined">bolt</span>
+</div>
+<p class="text-3xl font-bold">88<span class="text-lg text-gray-400">/100</span></p>
+<p class="text-[#07883b] text-xs font-medium mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span> +5% from yesterday
+                    </p>
+</div>
+<div class="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm">
+<p class="text-[#506795] dark:text-gray-400 text-sm font-medium mb-2">Lines/Session</p>
+<p class="text-3xl font-bold">422</p>
+<p class="text-[#07883b] text-xs font-medium mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span> +12% vs avg
+                    </p>
+</div>
+<div class="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm border-l-4 border-l-primary">
+<p class="text-[#506795] dark:text-gray-400 text-sm font-medium mb-2">Mental State</p>
+<p class="text-3xl font-bold text-primary italic">Flow</p>
+<p class="text-[#506795] text-xs font-medium mt-2 flex items-center gap-1">
+                        Stable for 45 mins
+                    </p>
+</div>
+<div class="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm">
+<p class="text-[#506795] dark:text-gray-400 text-sm font-medium mb-2">Logic Blocks</p>
+<p class="text-3xl font-bold">14</p>
+<p class="text-[#e73908] text-xs font-medium mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_down</span> -2% complexity
+                    </p>
+</div>
+</div>
+<!-- AI Recommendation Section -->
+<div class="bg-gradient-to-r from-primary to-[#8fa7f2] rounded-2xl p-8 text-white relative overflow-hidden shadow-lg">
+<div class="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="flex-1">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined">auto_awesome</span>
+<h3 class="text-xl font-bold">AI Deep Work Suggestion</h3>
+</div>
+<p class="text-primary-foreground/90 text-lg leading-relaxed mb-6">
+                            "Your typing patterns suggest a slight increase in frustration while refactoring the <code>AuthService.ts</code>. Consider a 5-minute break or simplifying the validation logic to maintain your current Flow state."
+                        </p>
+<div class="flex gap-4">
+<button class="bg-white text-primary font-bold px-6 py-2.5 rounded-lg shadow-md hover:bg-opacity-90 transition-all">Apply Logic Tips</button>
+<button class="bg-white/20 text-white font-medium px-6 py-2.5 rounded-lg backdrop-blur-sm hover:bg-white/30 transition-all">Dismiss</button>
+</div>
+</div>
+<div class="hidden lg:block w-48 h-48 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md">
+<span class="material-symbols-outlined text-7xl opacity-50">bubble_chart</span>
+</div>
+</div>
+<!-- Abstract decorative shapes -->
+<div class="absolute -top-12 -right-12 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+<div class="absolute -bottom-12 -left-12 w-64 h-64 bg-white/5 rounded-full blur-2xl"></div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Time Spent per Function -->
+<div class="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="text-lg font-bold">Time Spent per Function</h4>
+<p class="text-[#506795] text-sm italic">Avg 12m/func • Past 7 Days</p>
+</div>
+<span class="material-symbols-outlined text-gray-300">more_vert</span>
+</div>
+<div class="flex flex-col gap-6">
+<div class="grid grid-cols-[100px_1fr_40px] items-center gap-4">
+<span class="text-xs font-bold text-[#506795]">Auth.login</span>
+<div class="h-6 bg-pastel-blue rounded-full relative overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-primary/40 rounded-full" style="width: 85%"></div>
+</div>
+<span class="text-xs font-medium text-right">24m</span>
+</div>
+<div class="grid grid-cols-[100px_1fr_40px] items-center gap-4">
+<span class="text-xs font-bold text-[#506795]">Data.parse</span>
+<div class="h-6 bg-pastel-green rounded-full relative overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-[#07883b]/20 rounded-full" style="width: 45%"></div>
+</div>
+<span class="text-xs font-medium text-right">12m</span>
+</div>
+<div class="grid grid-cols-[100px_1fr_40px] items-center gap-4">
+<span class="text-xs font-bold text-[#506795]">UI.render</span>
+<div class="h-6 bg-pastel-orange rounded-full relative overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-[#e73908]/20 rounded-full" style="width: 30%"></div>
+</div>
+<span class="text-xs font-medium text-right">8m</span>
+</div>
+<div class="grid grid-cols-[100px_1fr_40px] items-center gap-4">
+<span class="text-xs font-bold text-[#506795]">API.fetch</span>
+<div class="h-6 bg-pastel-purple rounded-full relative overflow-hidden">
+<div class="absolute inset-y-0 left-0 bg-purple-400/30 rounded-full" style="width: 65%"></div>
+</div>
+<span class="text-xs font-medium text-right">18m</span>
+</div>
+</div>
+</div>
+<!-- Emotional State Heatmap -->
+<div class="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm">
+<div class="flex justify-between items-center mb-4">
+<h4 class="text-lg font-bold">Coding Emotional State</h4>
+<div class="flex gap-2">
+<div class="flex items-center gap-1">
+<div class="size-2 rounded-full bg-pastel-blue border border-primary/30"></div>
+<span class="text-[10px] text-gray-500 font-bold uppercase">Flow</span>
+</div>
+<div class="flex items-center gap-1">
+<div class="size-2 rounded-full bg-pastel-orange border border-orange-300"></div>
+<span class="text-[10px] text-gray-500 font-bold uppercase">Anxious</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2 h-48 justify-end relative">
+<!-- Mock Area Chart -->
+<div class="absolute inset-0 flex items-end gap-1 px-2 opacity-50">
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 40%"></div>
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 60%"></div>
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 85%"></div>
+<div class="flex-1 bg-pastel-orange rounded-t" style="height: 50%"></div>
+<div class="flex-1 bg-pastel-orange rounded-t" style="height: 30%"></div>
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 70%"></div>
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 95%"></div>
+<div class="flex-1 bg-pastel-purple rounded-t" style="height: 40%"></div>
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 65%"></div>
+<div class="flex-1 bg-pastel-blue rounded-t" style="height: 80%"></div>
+</div>
+<div class="flex justify-between text-[10px] font-bold text-gray-400 mt-4 z-10 px-2 pt-48">
+<span>09:00</span>
+<span>10:30</span>
+<span>12:00</span>
+<span>13:30</span>
+<span>15:00</span>
+<span>16:30</span>
+<span>18:00</span>
+</div>
+</div>
+<div class="mt-6 flex items-center gap-4 p-4 bg-pastel-blue/20 rounded-lg">
+<span class="material-symbols-outlined text-primary">analytics</span>
+<p class="text-xs leading-relaxed text-[#506795]">Your <strong>typing cadence</strong> peaked at 11:45 AM, indicating high mental engagement during architectural decisions.</p>
+</div>
+</div>
+</div>
+<!-- Detailed Analysis Section Header -->
+<div class="flex items-center justify-between border-b border-[#e8ebf3] dark:border-[#2a303c] pb-4">
+<h3 class="text-xl font-bold">Activity Detail</h3>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">Day</button>
+<button class="px-3 py-1.5 text-xs font-bold bg-primary text-white rounded-lg shadow-sm">Week</button>
+<button class="px-3 py-1.5 text-xs font-bold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">Month</button>
+</div>
+</div>
+<!-- Activity List / Feed -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-6 p-5 bg-white dark:bg-[#191e24] rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] transition-all hover:border-primary/50">
+<div class="size-12 rounded-full bg-pastel-blue flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined">code</span>
+</div>
+<div class="flex-1">
+<h5 class="font-bold text-sm">Large Refactor Session</h5>
+<p class="text-xs text-[#506795]">Analyzed 1,200 lines across 12 files</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">High Focus</p>
+<p class="text-[10px] text-gray-400 uppercase">2 hours ago</p>
+</div>
+<button class="material-symbols-outlined text-gray-300">chevron_right</button>
+</div>
+<div class="flex items-center gap-6 p-5 bg-white dark:bg-[#191e24] rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] transition-all hover:border-primary/50">
+<div class="size-12 rounded-full bg-pastel-orange flex items-center justify-center text-orange-500 shrink-0">
+<span class="material-symbols-outlined">bug_report</span>
+</div>
+<div class="flex-1">
+<h5 class="font-bold text-sm">Debugging Sprint</h5>
+<p class="text-xs text-[#506795]">Rapid trial-and-error pattern detected</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">Stressed State</p>
+<p class="text-[10px] text-gray-400 uppercase">5 hours ago</p>
+</div>
+<button class="material-symbols-outlined text-gray-300">chevron_right</button>
+</div>
+<div class="flex items-center gap-6 p-5 bg-white dark:bg-[#191e24] rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] transition-all hover:border-primary/50">
+<div class="size-12 rounded-full bg-pastel-purple flex items-center justify-center text-purple-500 shrink-0">
+<span class="material-symbols-outlined">model_training</span>
+</div>
+<div class="flex-1">
+<h5 class="font-bold text-sm">Documentation &amp; Setup</h5>
+<p class="text-xs text-[#506795]">Consistent typing speed • Low cognitive load</p>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold">Relaxed</p>
+<p class="text-[10px] text-gray-400 uppercase">Yesterday</p>
+</div>
+<button class="material-symbols-outlined text-gray-300">chevron_right</button>
+</div>
+</div>
+<footer class="mt-12 pt-8 border-t border-[#e8ebf3] dark:border-[#2a303c] flex justify-between items-center text-xs text-[#506795]">
+<p>© 2024 CodeMind AI Behavioral Analytics. All rights reserved.</p>
+<div class="flex gap-4">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Data Anonymization Details</a>
+<a class="hover:text-primary transition-colors" href="#">Documentation</a>
+</div>
+</footer>
+</div>
+</main>
+</div>
+</body></html>
