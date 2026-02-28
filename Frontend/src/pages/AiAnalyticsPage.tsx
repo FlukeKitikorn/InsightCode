@@ -33,18 +33,18 @@ export default function AiAnalyticsPage({ onNavigate }: AiAnalyticsPageProps) {
     const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
 
     return (
-        <PageLayout currentPage="analytics" onNavigate={onNavigate} fullScreen>
+        <PageLayout currentPage="analytics" onNavigate={onNavigate}>
             {/* ── Sidebar + Content (fills remaining height) ────────── */}
             <div className="flex flex-1 overflow-hidden">
 
                 {/* Sidebar */}
-                <Sidebar
+                {/* <Sidebar
                     currentPage="analytics"
                     onNavigate={onNavigate}
                     title="CodeMind AI"
                     subtitle="Behavioral Analysis"
                     logoIcon="psychology"
-                />
+                /> */}
 
                 {/* Scrollable Main Content */}
                 <div className="flex-1 overflow-y-auto">
@@ -187,7 +187,7 @@ export default function AiAnalyticsPage({ onNavigate }: AiAnalyticsPageProps) {
                             </div>
                         </div>
 
-                        {/* Inline Footer */}
+                        {/* Inline Footer
                         <footer className="mt-4 pt-8 border-t border-[#e8ebf3] dark:border-[#2a303c] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#506795]">
                             <p>© 2026 InsightCode AI Behavioral Analytics. All rights reserved.</p>
                             <div className="flex gap-4">
@@ -195,7 +195,7 @@ export default function AiAnalyticsPage({ onNavigate }: AiAnalyticsPageProps) {
                                     <a key={link} href="#" className="hover:text-[#5586e7] transition-colors">{link}</a>
                                 ))}
                             </div>
-                        </footer>
+                        </footer> */}
                     </div>
                 </div>
             </div>
