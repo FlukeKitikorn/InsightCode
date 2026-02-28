@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Page } from '../types'
 import PageLayout from '../components/layout/PageLayout'
-import Sidebar from '../components/layout/Sidebar'
+// import Sidebar from '../components/layout/Sidebar'
 import StatCard from '../components/ui/StatCard'
 
 const FUNCTION_TIMES = [
