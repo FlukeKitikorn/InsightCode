@@ -90,5 +90,5 @@ export interface SystemResource {
   color: string
 }
 
-// ─── Navigation ──────────────────────────────────────────────
-export type Page = 'auth' | 'problems' | 'workspace' | 'analytics' | 'admin'
+// ─── Navigation (main app only) ──────────────────────────────
+export type Page = 'auth' | 'problems' | 'workspace' | 'analytics'

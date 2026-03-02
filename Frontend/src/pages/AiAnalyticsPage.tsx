@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { motion } from 'motion/react'
 import type { Page } from '../types'
 import PageLayout from '../components/layout/PageLayout'
 // import Sidebar from '../components/layout/Sidebar'
 import StatCard from '../components/ui/StatCard'
+import D3BarChart from '../components/ui/D3BarChart'
 
 const FUNCTION_TIMES = [
     { name: 'Auth.login', minutes: 24, pct: 85, bg: 'bg-blue-100', fill: 'bg-[#5586e7]/40' },
@@ -52,12 +54,33 @@ export default function AiAnalyticsPage({ onNavigate }: AiAnalyticsPageProps) {
                     {/* Content Body */}
                     <div className="p-6 md:p-8 flex flex-col gap-8 max-w-[1200px] mx-auto w-full">
 
-                        {/* Stats */}
+                        {/* Stats with motion animation */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <StatCard label="Focus Score" value="88/100" icon="bolt" trend="+5% from yesterday" trendUp={true} iconBg="bg-blue-50" iconColor="text-[#5586e7]" />
-                            <StatCard label="Lines/Session" value="422" icon="code" trend="+12% vs avg" trendUp={true} iconBg="bg-green-50" iconColor="text-green-600" />
-                            <StatCard label="Mental State" value="Flow" icon="psychology" trend="Stable for 45 mins" accentLeft={true} iconBg="bg-blue-50" iconColor="text-[#5586e7]" />
-                            <StatCard label="Logic Blocks" value="14" icon="analytics" trend="-2% complexity" trendUp={false} iconBg="bg-purple-50" iconColor="text-purple-600" />
+                            {[
+                                { label: 'Focus Score', value: '88/100', icon: 'bolt', trend: '+5% from yesterday', trendUp: true, iconBg: 'bg-blue-50', iconColor: 'text-[#5586e7]' },
+                                { label: 'Lines/Session', value: '422', icon: 'code', trend: '+12% vs avg', trendUp: true, iconBg: 'bg-green-50', iconColor: 'text-green-600' },
+                                { label: 'Mental State', value: 'Flow', icon: 'psychology', trend: 'Stable for 45 mins', trendUp: undefined, accentLeft: true, iconBg: 'bg-blue-50', iconColor: 'text-[#5586e7]' },
+                                { label: 'Logic Blocks', value: '14', icon: 'analytics', trend: '-2% complexity', trendUp: false, iconBg: 'bg-purple-50', iconColor: 'text-purple-600' },
+                            ].map((item, index) => (
+                                <motion.div
+                                    key={item.label}
+                                    initial={{ opacity: 0, y: 12 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.06, duration: 0.3 }}
+                                    viewport={{ once: true, amount: 0.4 }}
+                                >
+                                    <StatCard
+                                        label={item.label}
+                                        value={item.value}
+                                        icon={item.icon}
+                                        trend={item.trend}
+                                        trendUp={item.trendUp}
+                                        accentLeft={item.accentLeft}
+                                        iconBg={item.iconBg}
+                                        iconColor={item.iconColor}
+                                    />
+                                </motion.div>
+                            ))}
                         </div>
 
                         {/* AI Recommendation Banner */}
@@ -114,7 +137,7 @@ export default function AiAnalyticsPage({ onNavigate }: AiAnalyticsPageProps) {
                                 </div>
                             </div>
 
-                            {/* Emotional State Chart */}
+                            {/* Emotional State Chart (d3) */}
                             <div className="bg-white dark:bg-[#191e24] p-6 rounded-xl border border-[#e8ebf3] dark:border-[#2a303c] shadow-sm">
                                 <div className="flex justify-between items-center mb-4">
                                     <h4 className="text-lg font-bold dark:text-white">Coding Emotional State</h4>
@@ -127,14 +150,14 @@ export default function AiAnalyticsPage({ onNavigate }: AiAnalyticsPageProps) {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="relative h-48 mt-4">
-                                    <div className="absolute inset-0 flex items-end gap-1 px-2">
-                                        {CHART_BARS.map((bar, i) => (
-                                            <div key={i} className={`flex-1 ${bar.color} rounded-t transition-all duration-500 hover:opacity-80`} style={{ height: `${bar.pct}%` }} />
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-2">
+                                <D3BarChart
+                                    data={CHART_BARS.map((bar, i) => ({
+                                        label: `T${i + 1}`,
+                                        value: bar.pct,
+                                    }))}
+                                    max={100}
+                                />
+                                <div className="flex justify-between text-[10px] font-bold text-gray-400 mt-2 px-1">
                                     {['09:00', '10:30', '12:00', '13:30', '15:00', '16:30', '18:00'].map((t) => (
                                         <span key={t}>{t}</span>
                                     ))}

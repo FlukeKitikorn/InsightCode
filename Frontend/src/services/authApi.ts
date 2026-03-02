@@ -1,0 +1,109 @@
+// ─── Types ────────────────────────────────────────────────────
+export interface AuthUser {
+    id: string
+    email: string
+    role: string
+    fullName: string | null
+    avatarUrl: string | null
+    createdAt: string
+}
+
+export interface LoginPayload {
+    email: string
+    password: string
+}
+
+export interface RegisterPayload {
+    email: string
+    password: string
+    fullName?: string
+}
+
+export interface AdminLoginPayload {
+    email: string
+    password: string
+    adminCode: string
+}
+
+export interface AuthResponse {
+    message: string
+    accessToken: string
+    user: AuthUser
+}
+
+export interface RefreshResponse {
+    accessToken: string
+}
+
+export interface UpdateProfilePayload {
+    fullName?: string
+    avatarUrl?: string
+}
+
+// ─── API Base ─────────────────────────────────────────────────
+const API_BASE = 'http://localhost:4000/api'
+
+async function request<T>(
+    path: string,
+    options: RequestInit = {}
+): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        credentials: 'include', // ส่ง cookie (refresh token) ไปด้วยทุก request
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        },
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+        throw new Error(data.message || 'Something went wrong')
+    }
+
+    return data as T
+}
+
+// ─── Auth API Functions ────────────────────────────────────────
+export const authApi = {
+    register: (payload: RegisterPayload) =>
+        request<AuthResponse>('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }),
+
+    login: (payload: LoginPayload) =>
+        request<AuthResponse>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }),
+
+    adminLogin: (payload: AdminLoginPayload) =>
+        request<AuthResponse>('/auth/admin-login', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        }),
+
+    refresh: () =>
+        request<RefreshResponse>('/auth/refresh', {
+            method: 'POST',
+        }),
+
+    logout: () =>
+        request<{ message: string }>('/auth/logout', {
+            method: 'POST',
+        }),
+
+    getMe: (accessToken: string) =>
+        request<{ user: AuthUser }>('/auth/me', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+
+    updateProfile: (payload: UpdateProfilePayload, accessToken: string) =>
+        request<{ user: AuthUser }>('/users/me', {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${accessToken}` },
+            body: JSON.stringify(payload),
+        }),
+}

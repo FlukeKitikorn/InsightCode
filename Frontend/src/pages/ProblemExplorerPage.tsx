@@ -4,6 +4,7 @@ import PageLayout from '../components/layout/PageLayout'
 import Badge from '../components/ui/Badge'
 import ProgressBar from '../components/ui/ProgressBar'
 
+// TODO: future – replace this static data with API call
 const PROBLEMS: Problem[] = [
     {
         id: 1, title: '1. Two Sum', difficulty: 'Easy', status: 'solved',
@@ -150,42 +151,53 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filtered.map((problem) => {
-                                            const { icon, color } = STATUS_ICON[problem.status]
-                                            const aiStyle = AI_BADGE_STYLE[problem.aiRecommendType ?? 'none']
-                                            return (
-                                                <tr
-                                                    key={problem.id}
-                                                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50 cursor-pointer"
-                                                    onClick={() => onNavigate('workspace')}
+                                        {filtered.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={5}
+                                                    className="px-4 md:px-6 py-10 text-center text-sm text-slate-400"
                                                 >
-                                                    <td className="px-4 md:px-6 py-4">
-                                                        <span className={`material-symbols-outlined ${color} text-xl`}>{icon}</span>
-                                                    </td>
-                                                    <td className="px-4 md:px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">{problem.title}</span>
-                                                            <div className="flex gap-1 mt-1 flex-wrap">
-                                                                {problem.tags.map((t) => (
-                                                                    <Badge key={t.label} variant="tag">{t.label}</Badge>
-                                                                ))}
+                                                    ไม่มีโจทย์ที่จะแสดงในตอนนี้
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filtered.map((problem) => {
+                                                const { icon, color } = STATUS_ICON[problem.status]
+                                                const aiStyle = AI_BADGE_STYLE[problem.aiRecommendType ?? 'none']
+                                                return (
+                                                    <tr
+                                                        key={problem.id}
+                                                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-50 dark:border-slate-800/50 cursor-pointer"
+                                                        onClick={() => onNavigate('workspace')}
+                                                    >
+                                                        <td className="px-4 md:px-6 py-4">
+                                                            <span className={`material-symbols-outlined ${color} text-xl`}>{icon}</span>
+                                                        </td>
+                                                        <td className="px-4 md:px-6 py-4">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">{problem.title}</span>
+                                                                <div className="flex gap-1 mt-1 flex-wrap">
+                                                                    {problem.tags.map((t) => (
+                                                                        <Badge key={t.label} variant="tag">{t.label}</Badge>
+                                                                    ))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 md:px-6 py-4 hidden sm:table-cell">
-                                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${aiStyle}`}>
-                                                            {problem.aiRecommend ?? '—'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-4 md:px-6 py-4">
-                                                        <Badge variant="difficulty" difficulty={problem.difficulty} />
-                                                    </td>
-                                                    <td className="px-4 md:px-6 py-4 text-slate-500 font-medium text-sm hidden md:table-cell">
-                                                        {problem.acceptance}
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })}
+                                                        </td>
+                                                        <td className="px-4 md:px-6 py-4 hidden sm:table-cell">
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${aiStyle}`}>
+                                                                {problem.aiRecommend ?? '—'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 md:px-6 py-4">
+                                                            <Badge variant="difficulty" difficulty={problem.difficulty} />
+                                                        </td>
+                                                        <td className="px-4 md:px-6 py-4 text-slate-500 font-medium text-sm hidden md:table-cell">
+                                                            {problem.acceptance}
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -302,7 +314,10 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                     { month: 'MAR', day: 8, title: 'Biweekly Contest 118', time: '09:30 AM • 1h 30m', bg: 'bg-purple-50', textColor: 'text-purple-700' },
                                     { month: 'MAR', day: 10, title: 'Weekly Contest 368', time: '10:00 AM • 1h 30m', bg: 'bg-blue-50', textColor: 'text-[#5586e7]' },
                                 ].map((contest) => (
-                                    <div key={contest.title} className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                                    <div
+                                        key={contest.title}
+                                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    >
                                         <div className={`w-12 h-12 rounded-lg ${contest.bg} flex flex-col items-center justify-center ${contest.textColor}`}>
                                             <span className="text-xs font-bold">{contest.month}</span>
                                             <span className="text-lg font-bold -mt-1">{contest.day}</span>

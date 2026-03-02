@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import type { AuthMode, Page } from '../types'
 import Footer from '../components/layout/Footer'
+import { useAuth } from '../hooks/useAuth'
+import { useLoading } from '../contexts/LoadingContext'
+import toast from 'react-hot-toast'
 
 interface AuthPageProps {
     onNavigate: (page: Page) => void
@@ -11,30 +14,53 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
     const [showPassword, setShowPassword] = useState(false)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [fullName, setFullName] = useState('')
+    const [error, setError] = useState<string | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
-    const handleSubmit = (e: FormEvent) => {
+    const { login, register } = useAuth()
+    const { setLoading } = useLoading()
+
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
-        onNavigate('problems')
+        setError(null)
+        setIsSubmitting(true)
+
+        try {
+            if (mode === 'login') {
+                await login({ email, password })
+                toast.success('Signed in successfully')
+            } else {
+                await register({ email, password, fullName })
+                toast.success('Account created')
+            }
+            // สำเร็จ → แสดง skeleton ชั่วครู่แล้วไปหน้า problems
+            setLoading(true)
+            setTimeout(() => setLoading(false), 600)
+            onNavigate('problems')
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Something went wrong'
+            setError(message)
+            toast.error(message)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleModeChange = (m: AuthMode) => {
+        setMode(m)
+        setError(null)
     }
 
     return (
         <div className="bg-[#f6f6f8] dark:bg-[#111621] min-h-screen flex flex-col font-[Space_Grotesk] text-[#0e121b] dark:text-white">
             {/* Header */}
             <header className="flex items-center justify-between whitespace-nowrap border-b border-[#e8ebf3] dark:border-gray-800 bg-white/80 dark:bg-[#111621]/80 backdrop-blur-md px-6 md:px-10 py-3 sticky top-0 z-50">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 py-2">
                     <div className="w-8 h-8 bg-[#5586e7] rounded-lg flex items-center justify-center text-white">
                         <span className="material-symbols-outlined text-2xl">terminal</span>
                     </div>
                     <h2 className="text-xl font-bold leading-tight tracking-tight dark:text-white">InsightCode</h2>
-                </div>
-                <div className="flex items-center gap-4 md:gap-8">
-                    <nav className="hidden md:flex items-center gap-6">
-                        <a href="#" className="text-[#506795] dark:text-gray-400 text-sm font-medium hover:text-[#5586e7] transition-colors">Docs</a>
-                        <a href="#" className="text-[#506795] dark:text-gray-400 text-sm font-medium hover:text-[#5586e7] transition-colors">Pricing</a>
-                    </nav>
-                    <button className="flex min-w-[84px] cursor-pointer items-center justify-center rounded-lg h-10 px-4 border border-[#d1d8e6] dark:border-gray-700 text-sm font-bold transition-all hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white">
-                        Support
-                    </button>
                 </div>
             </header>
 
@@ -116,7 +142,7 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                 {(['login', 'register'] as AuthMode[]).map((m) => (
                                     <button
                                         key={m}
-                                        onClick={() => setMode(m)}
+                                        onClick={() => handleModeChange(m)}
                                         className={`flex-1 py-2 text-sm font-bold rounded-md transition-all capitalize ${mode === m
                                             ? 'bg-white dark:bg-gray-700 text-[#0e121b] dark:text-white shadow-sm'
                                             : 'text-[#506795] dark:text-gray-400 hover:text-[#0e121b] dark:hover:text-white'
@@ -126,6 +152,14 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Error Message */}
+                            {error && (
+                                <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                                    <span className="material-symbols-outlined text-red-500 text-lg">error</span>
+                                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                                </div>
+                            )}
 
                             {/* Auth Form */}
                             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -138,6 +172,8 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#d1d8e6] dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-[#5586e7] focus:border-[#5586e7] outline-none dark:text-white transition-all"
                                                 placeholder="John Doe"
                                                 type="text"
+                                                value={fullName}
+                                                onChange={(e) => setFullName(e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -153,17 +189,13 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                             type="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
+                                            required
                                         />
                                     </div>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-sm font-bold dark:text-white">Password</label>
-                                        {mode === 'login' && (
-                                            <a href="#" className="text-xs font-bold text-[#5586e7] hover:underline">Forgot?</a>
-                                        )}
-                                    </div>
+                                    <label className="text-sm font-bold dark:text-white">Password</label>
                                     <div className="relative">
                                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">lock</span>
                                         <input
@@ -172,6 +204,8 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                             type={showPassword ? 'text' : 'password'}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            minLength={8}
                                         />
                                         <button
                                             className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5586e7] transition-colors cursor-pointer text-xl"
@@ -181,13 +215,24 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                             {showPassword ? 'visibility_off' : 'visibility'}
                                         </button>
                                     </div>
+                                    {mode === 'register' && (
+                                        <p className="text-xs text-[#506795] dark:text-gray-500">Minimum 8 characters</p>
+                                    )}
                                 </div>
 
                                 <button
-                                    className="mt-2 w-full h-12 bg-[#5586e7] text-white font-bold rounded-lg shadow-lg shadow-[#5586e7]/20 hover:bg-[#4474d6] transition-all active:scale-[0.98]"
+                                    className="mt-2 w-full h-12 bg-[#5586e7] text-white font-bold rounded-lg shadow-lg shadow-[#5586e7]/20 hover:bg-[#4474d6] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     type="submit"
+                                    disabled={isSubmitting}
                                 >
-                                    {mode === 'login' ? 'Sign In to InsightCode' : 'Create Account'}
+                                    {isSubmitting ? (
+                                        <>
+                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            {mode === 'login' ? 'Signing in...' : 'Creating account...'}
+                                        </>
+                                    ) : (
+                                        mode === 'login' ? 'Sign In to InsightCode' : 'Create Account'
+                                    )}
                                 </button>
                             </form>
 

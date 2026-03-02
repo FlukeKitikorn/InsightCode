@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import type { Page, AdminUser, AiInsight } from '../types'
-import PageLayout from '../components/layout/PageLayout'
+import type { AdminUser, AiInsight } from '../types'
 import StatCard from '../components/ui/StatCard'
 import ProgressBar from '../components/ui/ProgressBar'
+import { useAuthStore } from '../store/authStore'
 
 const USERS: AdminUser[] = [
     { id: 'JD', initials: 'JS', name: 'Jordan Smith', email: 'jordan@dev.com', role: 'Developer', status: 'Active', lastActive: '2 mins ago' },
@@ -32,10 +32,11 @@ const SIDEBAR_NAV = [
 ]
 
 interface AdminPageProps {
-    onNavigate: (page: Page) => void
+    onNavigate: (page: 'admin' | 'adminLogin') => void
 }
 
 export default function AdminPage({ onNavigate }: AdminPageProps) {
+    const { user } = useAuthStore()
     const [activeNav, setActiveNav] = useState('Dashboard')
     const [search, setSearch] = useState('')
 
@@ -45,8 +46,29 @@ export default function AdminPage({ onNavigate }: AdminPageProps) {
             u.email.toLowerCase().includes(search.toLowerCase())
     )
 
+    if (!user || user.role !== 'ADMIN') {
+        return (
+            <div className="min-h-screen bg-[#020617] text-slate-50 flex items-center justify-center px-4">
+                <div className="max-w-md text-center space-y-4">
+                    <span className="material-symbols-outlined text-5xl text-amber-500">lock</span>
+                    <h2 className="text-2xl font-bold">Admin Access Only</h2>
+                    <p className="text-sm text-slate-400">
+                        You need an admin account to view this console. Please contact your administrator or use the admin login page.
+                    </p>
+                    <button
+                        onClick={() => onNavigate('adminLogin')}
+                        className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#5586e7] text-white text-sm font-bold hover:bg-[#4474d6] transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">admin_panel_settings</span>
+                        Go to Admin Login
+                    </button>
+                </div>
+            </div>
+        )
+    }
+
     return (
-        <PageLayout currentPage="admin" onNavigate={onNavigate} fullScreen>
+        <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
             {/* ── Sidebar + Content ─────────────────────────────────── */}
             <div className="flex flex-1 overflow-hidden">
 
@@ -96,27 +118,7 @@ export default function AdminPage({ onNavigate }: AdminPageProps) {
                 </aside>
 
                 {/* Scrollable Main */}
-                <main className="flex-1 overflow-y-auto">
-                    {/* Page Header */}
-                    <div className="bg-white dark:bg-[#111621] border-b border-slate-200 dark:border-slate-800 px-6 md:px-8 py-4 flex items-center justify-between">
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Platform Overview</h1>
-                        <div className="flex items-center gap-3">
-                            <div className="relative hidden sm:block">
-                                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                                <input
-                                    className="pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5586e7] w-48 text-sm dark:text-white"
-                                    placeholder="Search..."
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                />
-                            </div>
-                            <button className="relative p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                                <span className="material-symbols-outlined dark:text-white">notifications</span>
-                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-[#111621]" />
-                            </button>
-                        </div>
-                    </div>
+                <main className="flex-1 overflow-y-auto">                    
 
                     <div className="p-6 md:p-8 space-y-8">
 
@@ -268,6 +270,6 @@ export default function AdminPage({ onNavigate }: AdminPageProps) {
                     </div>
                 </main>
             </div>
-        </PageLayout>
+        </div>
     )
 }
