@@ -40,6 +40,16 @@ export interface UpdateProfilePayload {
     avatarUrl?: string
 }
 
+export interface UserProgress {
+    totalProblems: number
+    solvedTotal: number
+    attemptedTotal: number
+    totalsByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
+    solvedByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
+    attemptedByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
+    masteryByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
+}
+
 // ─── API Base ─────────────────────────────────────────────────
 const API_BASE = 'http://localhost:4000/api'
 
@@ -105,5 +115,10 @@ export const authApi = {
             method: 'PUT',
             headers: { Authorization: `Bearer ${accessToken}` },
             body: JSON.stringify(payload),
+        }),
+
+    getProgress: (accessToken: string) =>
+        request<{ progress: UserProgress }>('/users/me/progress', {
+            headers: { Authorization: `Bearer ${accessToken}` },
         }),
 }

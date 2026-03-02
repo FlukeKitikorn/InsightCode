@@ -29,7 +29,7 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
 
     const x = d3
       .scaleLinear()
-      .domain([0, max ?? d3.max(data, (d) => d.value) ?? 0])
+      .domain([0, max ?? d3.max(data, (d: D3BarChartDatum) => d.value) ?? 0])
       .nice()
       .range([0, innerWidth])
 
@@ -58,7 +58,9 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
         d3
           .axisBottom(x)
           .ticks(4)
-          .tickFormat((d) => `${d as number}%`),
+          .tickFormat((d: d3.NumberValue) => `${Number(d)}%`) as unknown as (
+          selection: d3.Selection<SVGGElement, unknown, null, undefined>,
+        ) => void,
       )
       .selectAll('text')
       .attr('fill', '#94a3b8')
@@ -70,7 +72,7 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
       .append('rect')
       .attr('class', 'bar-bg')
       .attr('x', 0)
-      .attr('y', (d) => y(d.label) ?? 0)
+      .attr('y', (d: D3BarChartDatum) => y(d.label) ?? 0)
       .attr('height', y.bandwidth())
       .attr('width', innerWidth)
       .attr('fill', '#e2e8f0')
@@ -82,9 +84,9 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
       .append('rect')
       .attr('class', 'bar-fill')
       .attr('x', 0)
-      .attr('y', (d) => (y(d.label) ?? 0) + 1)
+      .attr('y', (d: D3BarChartDatum) => (y(d.label) ?? 0) + 1)
       .attr('height', y.bandwidth() - 2)
-      .attr('width', (d) => x(d.value))
+      .attr('width', (d: D3BarChartDatum) => x(d.value))
       .attr('fill', '#5586e7')
       .attr('rx', 4)
 
@@ -93,12 +95,12 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
       .enter()
       .append('text')
       .attr('class', 'label')
-      .attr('x', (d) => x(d.value) + 4)
-      .attr('y', (d) => (y(d.label) ?? 0) + y.bandwidth() / 2 + 3)
+      .attr('x', (d: D3BarChartDatum) => x(d.value) + 4)
+      .attr('y', (d: D3BarChartDatum) => (y(d.label) ?? 0) + y.bandwidth() / 2 + 3)
       .attr('fill', '#64748b')
       .attr('font-size', 9)
       .attr('font-weight', 600)
-      .text((d) => `${d.value}%`)
+      .text((d: D3BarChartDatum) => `${d.value}%`)
   }, [data, max])
 
   return (

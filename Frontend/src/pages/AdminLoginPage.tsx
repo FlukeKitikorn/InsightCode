@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import type { Page } from '../types'
 import { useAuth } from '../hooks/useAuth'
 import { useLoading } from '../contexts/LoadingContext'
+import { useNavigate } from 'react-router-dom'
 
 interface AdminLoginPageProps {
   onNavigate: (page: Page) => void
@@ -10,6 +11,7 @@ interface AdminLoginPageProps {
 export default function AdminLoginPage({ onNavigate }: AdminLoginPageProps) {
   const { adminLogin } = useAuth()
   const { setLoading } = useLoading()
+  // const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -125,14 +127,6 @@ export default function AdminLoginPage({ onNavigate }: AdminLoginPageProps) {
                 Sign in as Admin
               </>
             )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('auth')}
-            className="w-full text-xs text-slate-400 hover:text-slate-200 underline-offset-2 hover:underline mt-2"
-          >
-            Back to user login
           </button>
         </form>
       </div>

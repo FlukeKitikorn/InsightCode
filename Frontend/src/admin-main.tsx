@@ -6,6 +6,7 @@ import AdminLoginPage from './pages/AdminLoginPage'
 import { LoadingProvider } from './contexts/LoadingContext'
 import { useAuthStore } from './store/authStore'
 import { Toaster } from 'react-hot-toast'
+import type { Page } from './types'
 
 type AdminRoute = 'login' | 'console'
 
@@ -13,7 +14,7 @@ function AdminApp() {
   const [route, setRoute] = useState<AdminRoute>('login')
   const { isAuthenticated, user } = useAuthStore()
 
-  const handleNavigate = (page: 'admin' | 'adminLogin') => {
+  const handleNavigate = (page: Page) => {
     if (page === 'admin') setRoute('console')
     if (page === 'adminLogin') setRoute('login')
   }

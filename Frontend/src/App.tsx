@@ -1,17 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import type { Page } from './types'
 import { useAuthStore } from './store/authStore'
 import { authApi } from './services/authApi'
 import AuthPage from './pages/AuthPage'
 import ProblemExplorerPage from './pages/ProblemExplorerPage'
-import CodingWorkspacePage from './pages/CodingWorkspacePage'
+import ProblemWorkspacePage from './pages/ProblemWorkspacePage'
 import AiAnalyticsPage from './pages/AiAnalyticsPage'
 import { useLoading } from './contexts/LoadingContext'
 import UserProfilePage from './pages/UserProfilePage'
+import AdminLoginPage from './pages/AdminLoginPage'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>('auth')
-  const { isAuthenticated, isLoading, setAuth, clearAuth, setLoading } = useAuthStore()
+  const navigate = useNavigate()
+  useLocation()
+  const { isAuthenticated, isLoading, setAuth, clearAuth, setLoading, user } = useAuthStore()
   const { setLoading: setPageLoading } = useLoading()
 
   // ─── Silent Refresh on App Boot ───────────────────────────────
@@ -23,20 +27,34 @@ export default function App() {
         const { accessToken } = await authApi.refresh()
         const { user } = await authApi.getMe(accessToken)
         setAuth(user, accessToken)
-        setCurrentPage('problems')  // เปลี่ยนหน้าทันทีถ้า session ยังคงอยู่
+        // ถ้าอยู่ root ให้ไป problems; ถ้า deep-link มา (workspace/profile/...) ให้ค้างไว้
+        if (window.location.pathname === '/') navigate('/problems', { replace: true })
       } catch {
         clearAuth()  // session หมดอายุ → ให้ login ใหม่
+        if (window.location.pathname !== '/') navigate('/', { replace: true })
       } finally {
         setLoading(false)
       }
     }
 
     tryRefresh()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleNavigate = (page: Page) => {
+    const map: Record<Page, string> = {
+      auth: '/',
+      problems: '/problems',
+      analytics: '/analyze',
+      profile: '/profile',
+      // workspace is param-based; only used when already inside a workspace
+      workspace: '/problems',
+      admin: '/admin',
+      adminLogin: '/admin/login',
+    }
+
     setPageLoading(true)
-    setCurrentPage(page)
+    navigate(map[page])
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setTimeout(() => setPageLoading(false), 500)
   }
@@ -56,28 +74,78 @@ export default function App() {
     )
   }
 
-  // ─── Route Guard: redirect ถ้าไม่ได้ login ─────────────────────
-  if (!isAuthenticated && currentPage !== 'auth') {
-    return <AuthPage onNavigate={handleNavigate} />
+  const RequireAuth = ({ children }: { children: React.ReactNode }) => {
+    if (!isAuthenticated) return <Navigate to="/" replace />
+    return <>{children}</>
+  }
+
+  const RequireAdmin = ({ children }: { children: React.ReactNode }) => {
+    if (!isAuthenticated) return <Navigate to="/admin/login" replace />
+    if (!user || user.role !== 'ADMIN') return <Navigate to="/admin/login" replace />
+    return <>{children}</>
   }
 
   return (
-    <>
-      {currentPage === 'auth' && (
-        <AuthPage onNavigate={handleNavigate} />
-      )}
-      {currentPage === 'profile' && (
-        <UserProfilePage onNavigate={handleNavigate} />
-      )}
-      {currentPage === 'problems' && (
-        <ProblemExplorerPage onNavigate={handleNavigate} />
-      )}
-      {currentPage === 'workspace' && (
-        <CodingWorkspacePage onNavigate={handleNavigate} />
-      )}
-      {currentPage === 'analytics' && (
-        <AiAnalyticsPage onNavigate={handleNavigate} />
-      )}
-    </>
+    <Routes>
+      {/* user auth */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/problems" replace />
+          ) : (
+            <AuthPage onNavigate={handleNavigate} />
+          )
+        }
+      />
+
+      {/* main app */}
+      <Route
+        path="/problems"
+        element={
+          <RequireAuth>
+            <ProblemExplorerPage onNavigate={handleNavigate} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/analyze"
+        element={
+          <RequireAuth>
+            <AiAnalyticsPage onNavigate={handleNavigate} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/workspace/:id"
+        element={
+          <RequireAuth>
+            <ProblemWorkspacePage onNavigate={handleNavigate} />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <RequireAuth>
+            <UserProfilePage onNavigate={handleNavigate} />
+          </RequireAuth>
+        }
+      />
+
+      {/* admin */}
+      <Route path="/admin/login" element={<AdminLoginPage onNavigate={handleNavigate} />} />
+      <Route
+        path="/admin"
+        element={
+          <RequireAdmin>
+            <AdminPage onNavigate={handleNavigate} />
+          </RequireAdmin>
+        }
+      />
+
+      {/* fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }

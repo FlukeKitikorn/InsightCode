@@ -10,12 +10,12 @@ export interface ProblemTag {
 }
 
 export interface Problem {
-  id: number
+  id: string
   title: string
   difficulty: Difficulty
   status: ProblemStatus
   tags: ProblemTag[]
-  acceptance: string
+  acceptance?: string
   aiRecommend?: string
   aiRecommendType?: 'interview' | 'top' | 'weak' | 'none'
 }
@@ -91,4 +91,11 @@ export interface SystemResource {
 }
 
 // ─── Navigation (main app only) ──────────────────────────────
-export type Page = 'auth' | 'problems' | 'workspace' | 'analytics'
+export type Page =
+  | 'auth'
+  | 'problems'
+  | 'workspace'
+  | 'analytics'
+  | 'profile'
+  | 'admin'
+  | 'adminLogin'

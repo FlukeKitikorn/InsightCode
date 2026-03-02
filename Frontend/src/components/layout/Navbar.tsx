@@ -1,6 +1,7 @@
 import type { Page } from '../../types'
 import { useAuth } from '../../hooks/useAuth'
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 
 interface NavbarProps {
     currentPage: Page
@@ -32,6 +33,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
 
     const handleLogout = async () => {
         await logout()
+        toast.success('Signed out successfully')
         onNavigate('auth')
     }
 

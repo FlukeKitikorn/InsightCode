@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AdminUser, AiInsight } from '../types'
+import type { AdminUser, AiInsight, Page } from '../types'
 import StatCard from '../components/ui/StatCard'
 import ProgressBar from '../components/ui/ProgressBar'
 import { useAuthStore } from '../store/authStore'
@@ -32,7 +32,7 @@ const SIDEBAR_NAV = [
 ]
 
 interface AdminPageProps {
-    onNavigate: (page: 'admin' | 'adminLogin') => void
+    onNavigate: (page: Page) => void
 }
 
 export default function AdminPage({ onNavigate }: AdminPageProps) {
@@ -80,6 +80,20 @@ export default function AdminPage({ onNavigate }: AdminPageProps) {
                             <span className="material-symbols-outlined text-[#5586e7]">admin_panel_settings</span>
                             Admin Console
                         </h2>
+                    </div>
+
+                    <div className="px-4 pt-4">
+                        <div className="relative">
+                            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">
+                                search
+                            </span>
+                            <input
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search users..."
+                                className="w-full pl-10 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none focus:ring-2 focus:ring-[#5586e7]/30"
+                            />
+                        </div>
                     </div>
 
                     {/* Nav */}
