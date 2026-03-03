@@ -9,8 +9,8 @@ import ProblemWorkspacePage from './pages/ProblemWorkspacePage'
 import AiAnalyticsPage from './pages/AiAnalyticsPage'
 import { useLoading } from './contexts/LoadingContext'
 import UserProfilePage from './pages/UserProfilePage'
-import AdminLoginPage from './pages/AdminLoginPage'
-import AdminPage from './pages/AdminPage'
+import AdminLoginPage from './pages/admin/AdminLoginPage'
+import AdminPage from './pages/admin/AdminPage'
 
 export default function App() {
   const navigate = useNavigate()

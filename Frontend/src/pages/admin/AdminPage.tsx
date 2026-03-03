@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import type { AdminUser, AiInsight, Page } from '../types'
-import StatCard from '../components/ui/StatCard'
-import ProgressBar from '../components/ui/ProgressBar'
-import { useAuthStore } from '../store/authStore'
+import type { AdminUser, AiInsight, Page } from '../../types'
+import StatCard from '../../components/ui/StatCard'
+import ProgressBar from '../../components/ui/ProgressBar'
+import { useAuthStore } from '../../store/authStore'
 
 const USERS: AdminUser[] = [
     { id: 'JD', initials: 'JS', name: 'Jordan Smith', email: 'jordan@dev.com', role: 'Developer', status: 'Active', lastActive: '2 mins ago' },

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import type { Page } from '../types'
-import { useAuth } from '../hooks/useAuth'
-import { useLoading } from '../contexts/LoadingContext'
+import type { Page } from '../../types'
+import { useAuth } from '../../hooks/useAuth'
+import { useLoading } from '../../contexts/LoadingContext'
 
 interface AdminLoginPageProps {
   onNavigate: (page: Page) => void
