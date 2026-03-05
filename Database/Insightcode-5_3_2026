@@ -1,0 +1,916 @@
+--
+-- PostgreSQL database dump
+--
+
+\restrict fG3FKJHAfEeNhk1seb05KERCRHnKzd8jl4jsiOY0tpwpZff63WmTzEud0NCBoPr
+
+-- Dumped from database version 16.13 (Debian 16.13-1.pgdg13+1)
+-- Dumped by pg_dump version 16.11
+
+-- Started on 2026-03-05 16:49:45 UTC
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 2 (class 3079 OID 16387)
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- TOC entry 3515 (class 0 OID 0)
+-- Dependencies: 2
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
+
+
+--
+-- TOC entry 880 (class 1247 OID 16540)
+-- Name: ProblemDifficulty; Type: TYPE; Schema: public; Owner: admin
+--
+
+CREATE TYPE public."ProblemDifficulty" AS ENUM (
+    'EASY',
+    'MEDIUM',
+    'HARD'
+);
+
+
+ALTER TYPE public."ProblemDifficulty" OWNER TO admin;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 222 (class 1259 OID 16455)
+-- Name: ai_feedback; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.ai_feedback (
+    id integer NOT NULL,
+    submission_id uuid NOT NULL,
+    analysis_text text,
+    quality_score double precision,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.ai_feedback OWNER TO admin;
+
+--
+-- TOC entry 221 (class 1259 OID 16454)
+-- Name: ai_feedback_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.ai_feedback_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.ai_feedback_id_seq OWNER TO admin;
+
+--
+-- TOC entry 3516 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: ai_feedback_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.ai_feedback_id_seq OWNED BY public.ai_feedback.id;
+
+
+--
+-- TOC entry 227 (class 1259 OID 16562)
+-- Name: announcement_reads; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.announcement_reads (
+    user_id uuid NOT NULL,
+    announcement_id integer NOT NULL
+);
+
+
+ALTER TABLE public.announcement_reads OWNER TO admin;
+
+--
+-- TOC entry 226 (class 1259 OID 16552)
+-- Name: announcements; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.announcements (
+    id integer NOT NULL,
+    title character varying(255) NOT NULL,
+    body text NOT NULL,
+    type character varying(20) DEFAULT 'info'::character varying NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.announcements OWNER TO admin;
+
+--
+-- TOC entry 225 (class 1259 OID 16551)
+-- Name: announcements_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.announcements_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.announcements_id_seq OWNER TO admin;
+
+--
+-- TOC entry 3517 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: announcements_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.announcements_id_seq OWNED BY public.announcements.id;
+
+
+--
+-- TOC entry 217 (class 1259 OID 16410)
+-- Name: problems; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.problems (
+    id uuid NOT NULL,
+    title character varying(255) NOT NULL,
+    description text NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    difficulty public."ProblemDifficulty" DEFAULT 'EASY'::public."ProblemDifficulty" NOT NULL
+);
+
+
+ALTER TABLE public.problems OWNER TO admin;
+
+--
+-- TOC entry 224 (class 1259 OID 16499)
+-- Name: refresh_tokens; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.refresh_tokens (
+    id integer NOT NULL,
+    token text NOT NULL,
+    user_id uuid NOT NULL,
+    expires_at timestamp(3) without time zone NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    revoked boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public.refresh_tokens OWNER TO admin;
+
+--
+-- TOC entry 223 (class 1259 OID 16498)
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.refresh_tokens_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.refresh_tokens_id_seq OWNER TO admin;
+
+--
+-- TOC entry 3518 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.refresh_tokens_id_seq OWNED BY public.refresh_tokens.id;
+
+
+--
+-- TOC entry 220 (class 1259 OID 16434)
+-- Name: submissions; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.submissions (
+    id uuid NOT NULL,
+    user_id uuid,
+    problem_id uuid,
+    code text,
+    language character varying(20),
+    status character varying(30) DEFAULT 'pending'::character varying NOT NULL,
+    execution_time double precision,
+    memory_used double precision,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.submissions OWNER TO admin;
+
+--
+-- TOC entry 219 (class 1259 OID 16420)
+-- Name: test_cases; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.test_cases (
+    id integer NOT NULL,
+    problem_id uuid NOT NULL,
+    input_data text,
+    expected_output text,
+    is_hidden boolean DEFAULT true NOT NULL
+);
+
+
+ALTER TABLE public.test_cases OWNER TO admin;
+
+--
+-- TOC entry 218 (class 1259 OID 16419)
+-- Name: test_cases_id_seq; Type: SEQUENCE; Schema: public; Owner: admin
+--
+
+CREATE SEQUENCE public.test_cases_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.test_cases_id_seq OWNER TO admin;
+
+--
+-- TOC entry 3519 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: test_cases_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: admin
+--
+
+ALTER SEQUENCE public.test_cases_id_seq OWNED BY public.test_cases.id;
+
+
+--
+-- TOC entry 216 (class 1259 OID 16398)
+-- Name: users; Type: TABLE; Schema: public; Owner: admin
+--
+
+CREATE TABLE public.users (
+    id uuid NOT NULL,
+    email character varying(255) NOT NULL,
+    password_hash text NOT NULL,
+    role character varying(20) DEFAULT 'USER'::character varying NOT NULL,
+    created_at timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    avatar_url text,
+    full_name character varying(255)
+);
+
+
+ALTER TABLE public.users OWNER TO admin;
+
+--
+-- TOC entry 3320 (class 2604 OID 16458)
+-- Name: ai_feedback id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.ai_feedback ALTER COLUMN id SET DEFAULT nextval('public.ai_feedback_id_seq'::regclass);
+
+
+--
+-- TOC entry 3325 (class 2604 OID 16555)
+-- Name: announcements id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.announcements ALTER COLUMN id SET DEFAULT nextval('public.announcements_id_seq'::regclass);
+
+
+--
+-- TOC entry 3322 (class 2604 OID 16502)
+-- Name: refresh_tokens id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.refresh_tokens ALTER COLUMN id SET DEFAULT nextval('public.refresh_tokens_id_seq'::regclass);
+
+
+--
+-- TOC entry 3316 (class 2604 OID 16423)
+-- Name: test_cases id; Type: DEFAULT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.test_cases ALTER COLUMN id SET DEFAULT nextval('public.test_cases_id_seq'::regclass);
+
+
+--
+-- TOC entry 3504 (class 0 OID 16455)
+-- Dependencies: 222
+-- Data for Name: ai_feedback; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.ai_feedback (id, submission_id, analysis_text, quality_score, created_at) FROM stdin;
+1	998fd635-6ff0-4c30-ba68-1dbe0631752b	Language: typescript\nLines: 4\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-03 11:23:33.127
+2	354efbbd-f3f5-4985-b1a5-af33991b1959	Language: javascript\nLines: 12\nInsights:\n- ใช้ Map/Set ดีสำหรับลดเวลา lookup\n	70	2026-03-04 08:17:39.887
+3	2c222cd7-337f-4585-ae74-d890efe5288d	Language: javascript\nLines: 6\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-04 13:30:32.339
+4	26287654-8ed6-450b-a3ae-206e706b4c52	Language: javascript\nLines: 4\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-04 13:47:00.576
+5	bf6b19e4-b7e1-438d-869c-35cc3cb06d14	Language: javascript\nLines: 19\nInsights:\n- ยังไม่มีสัญญาณผิดปกติ\n	60	2026-03-05 06:30:39.427
+6	d37aa6f4-5609-412b-aabb-ac452a6d8886	Language: javascript\nLines: 3\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-05 07:37:58.27
+7	a473f931-ddb0-43c2-ae93-62b3d00abc7d	Language: javascript\nLines: 6\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-05 07:38:21.936
+8	52093ca6-1ec5-4962-96d2-d40214e9d5b6	Language: javascript\nLines: 3\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-05 07:43:17.933
+9	c68e9603-7b6c-47cb-a66f-9fb0a715eabb	Language: javascript\nLines: 3\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n	60	2026-03-05 07:43:27.034
+10	327ac073-2da5-4ad5-8d1c-03f8147c1c94	Language: javascript\nLines: 4\nTests: 0/3 passed\nExecution: ~6ms\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n- ยังไม่มี comment อธิบาย logic อาจทำให้โค้ดอ่านยากเมื่อเวลาผ่านไป\n- ยังมี test case ที่ไม่ผ่าน (0/3) ลองตรวจสอบ edge cases เพิ่มเติม\n	25	2026-03-05 16:35:15.791
+11	c8cc7a2a-a594-4ee8-94e1-3adb454ef208	Language: javascript\nLines: 4\nTests: 0/3 passed\nExecution: ~7ms\nInsights:\n- โค้ดสั้นมาก อาจยังไม่ครอบคลุม edge cases\n- ยังไม่มี comment อธิบาย logic อาจทำให้โค้ดอ่านยากเมื่อเวลาผ่านไป\n- ยังมี test case ที่ไม่ผ่าน (0/3) ลองตรวจสอบ edge cases เพิ่มเติม\n	25	2026-03-05 16:36:28.332
+\.
+
+
+--
+-- TOC entry 3509 (class 0 OID 16562)
+-- Dependencies: 227
+-- Data for Name: announcement_reads; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.announcement_reads (user_id, announcement_id) FROM stdin;
+6198f028-7653-4722-b5f6-5e452da19990	1
+6198f028-7653-4722-b5f6-5e452da19990	2
+1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	1
+1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	2
+6198f028-7653-4722-b5f6-5e452da19990	3
+\.
+
+
+--
+-- TOC entry 3508 (class 0 OID 16552)
+-- Dependencies: 226
+-- Data for Name: announcements; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.announcements (id, title, body, type, created_at) FROM stdin;
+1	asd	asd	info	2026-03-04 06:07:21.291
+2	test warning	warning	warning	2026-03-05 05:25:52.36
+3	ประกาศๆๆๆ	test test tes	danger	2026-03-05 16:45:47.428
+\.
+
+
+--
+-- TOC entry 3499 (class 0 OID 16410)
+-- Dependencies: 217
+-- Data for Name: problems; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.problems (id, title, description, created_at, difficulty) FROM stdin;
+22222222-2222-2222-2222-222222222222	Balanced Parentheses	Check if a string of brackets is balanced.	2026-03-02 17:55:33.101	MEDIUM
+33333333-3333-3333-3333-333333333333	Shortest Path in Grid	Find shortest path in grid from top-left to bottom-right.	2026-03-02 17:55:33.101	HARD
+74a913b7-66d1-4f14-81c2-43f1d270a1a7	Two Sum	Given an array of integers and a target, return indices of the two numbers that add up to target. You may assume exactly one solution.	2026-03-04 07:57:27.046	EASY
+0db1617c-62b8-4f51-9fd5-43f228880d4a	Reverse String	Reverse the input string. Input is a JSON string e.g. "hello".	2026-03-04 07:59:05.352	EASY
+2238bca4-834a-48e2-b948-1134b32d1bd9	Is Palindrome	Given a string s, return true if s is a palindrome, false otherwise. Palindrome reads the same forward and backward.	2026-03-04 07:59:16.406	EASY
+927e5490-5ee5-4c42-a863-50da1ce6587c	Transpose Matrix	Given a 2D matrix, return its transpose. The transpose of a matrix is obtained by turning all rows into columns and vice versa.	2026-03-04 07:59:23.918	MEDIUM
+8d307f95-8f4d-4e02-b7f1-0d52107ddf8f	Average Score	Given an array of objects with a numeric field \\"score\\", return the average score as a number. Assume at least one element unless specified otherwise.	2026-03-04 07:59:33.03	EASY
+e06b4bed-c673-4436-859e-6da3acb7d869	Even or Odd	Given integer n print EVEN if n is even otherwise print ODD.	2026-03-05 06:57:06.128	EASY
+0a2f0b07-237b-4205-874e-97a5186a9dae	Maximum of Three Numbers	Given three integers a b c print the maximum.	2026-03-05 06:58:07.689	EASY
+09977acc-87ee-4b8e-bd8d-09e6dbe6042e	Count Vowels	Given a string count how many vowels exist.	2026-03-05 06:58:37.46	MEDIUM
+9e1a42bd-5719-4f8e-ad7d-330f83ae3e0a	Fibonacci Number	Given n print the nth fibonacci number.	2026-03-05 06:58:55.467	MEDIUM
+e03bbc51-1431-4c37-9448-0aec9381ba95	test 01	abc	2026-03-05 16:43:42.881	EASY
+\.
+
+
+--
+-- TOC entry 3506 (class 0 OID 16499)
+-- Dependencies: 224
+-- Data for Name: refresh_tokens; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.refresh_tokens (id, token, user_id, expires_at, created_at, revoked) FROM stdin;
+1	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NTk1MCwiZXhwIjoxNzcyOTkwNzUwfQ.GKkpwDzBBgGmo6GScY0IGcmBg-vjXTKtR0_Cj4wGCw0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:25:50.408	2026-03-01 17:25:50.414	t
+2	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NjA1MiwiZXhwIjoxNzcyOTkwODUyfQ.Cq8vNF0c5QFZfaMHwvuQ93ZSHPm3HZDNL-QqVbGhK2s	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:27:32.729	2026-03-01 17:27:32.73	f
+21	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTI0MSwiZXhwIjoxNzcyOTk0MDQxfQ.1lMRj6q90LmMbvpybqDACBlzNhmSOUWet-YjXMERmxY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:20:41.144	2026-03-01 18:20:41.145	t
+4	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NjIzNCwiZXhwIjoxNzcyOTkxMDM0fQ.TG7Sciie1fyA_Y8ddGphSDkCMvI4UMqJBqU9B6IFRuY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:30:34.058	2026-03-01 17:30:34.074	t
+5	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NzM0NCwiZXhwIjoxNzcyOTkyMTQ0fQ.TnW2Y0ZmcrcguvXomJ8TILoE5KaGn9Nao2ProXdMq7U	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:49:04.149	2026-03-01 17:49:04.166	f
+7	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NzM3OCwiZXhwIjoxNzcyOTkyMTc4fQ.o2546ms1OI39Zd9BGhcDRxHc7xO1hhqf6htHD8-PbMs	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:49:38.361	2026-03-01 17:49:38.362	t
+8	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NzQ0MSwiZXhwIjoxNzcyOTkyMjQxfQ.fvqgD6s04NNn9Pfoqaj6VoYtZR5ja8NPFhaH2qsSdrc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:50:41.044	2026-03-01 17:50:41.044	f
+9	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4NzUwMCwiZXhwIjoxNzcyOTkyMzAwfQ.48p-UtVZyy7IC0dLBxEr-sherpIRXqAdrZi_L47Ierk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 17:51:40.44	2026-03-01 17:51:40.44	f
+10	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4ODM4NCwiZXhwIjoxNzcyOTkzMTg0fQ.JixsN0FL5iKUZwx215438VySHS7Gb9oihZ6mqqitdac	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:06:24.698	2026-03-01 18:06:24.72	t
+11	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4ODM5NiwiZXhwIjoxNzcyOTkzMTk2fQ.UjMILbmNO8iYTyviwp9uj-N-ABUW2wn92TztdoRI2E4	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:06:36.415	2026-03-01 18:06:36.416	f
+16	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTE5OSwiZXhwIjoxNzcyOTkzOTk5fQ.TeXoZ0GnuzX0Ma0U-veKpXoWnRVSvHCaTJVs7_5BEM8	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:19:59.702	2026-03-01 18:19:59.702	t
+12	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4ODk2NSwiZXhwIjoxNzcyOTkzNzY1fQ.SAFitINFOiJ15SW7xJyQ6t8lEwTK0Sxq4N1ch5epmNA	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:16:05.38	2026-03-01 18:16:05.381	t
+13	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTA3MywiZXhwIjoxNzcyOTkzODczfQ.Y_EKjHap-cTP80h1PYMyZNhJEbB11zTsidcjEpcLZwo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:17:53.286	2026-03-01 18:17:53.286	t
+17	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTIyMiwiZXhwIjoxNzcyOTk0MDIyfQ.fJgUhkYp-gcWYZWoU6adxt1HG_J_YaW-DRKn7STeGeQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:20:22.397	2026-03-01 18:20:22.397	t
+19	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTIyNSwiZXhwIjoxNzcyOTk0MDI1fQ.Q_SM49dH_rcOTEPcm46d-T9eXYNYKMe2701tQl4RFB8	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:20:25.691	2026-03-01 18:20:25.692	t
+23	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTI2MCwiZXhwIjoxNzcyOTk0MDYwfQ.XZ7ObPokaSI1dL_frFXzQG9bj6Hw2-r1vAviIJprSls	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:21:00.279	2026-03-01 18:21:00.28	f
+20	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTIzNCwiZXhwIjoxNzcyOTk0MDM0fQ.iRVLryFfW1OGgfrNRg291ghKQIf-w5HD9S-IRV7fxYw	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:20:34.763	2026-03-01 18:20:34.764	t
+25	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTMxNiwiZXhwIjoxNzcyOTk0MTE2fQ.EI653hzF3Bq68aXZSZjoeC1658uUitlKOYHwBt7gjXU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:21:56.667	2026-03-01 18:21:56.669	t
+24	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTI4NSwiZXhwIjoxNzcyOTk0MDg1fQ.6igDZr--B13Z4qpP10XA7lEtgu8NYQ2siYSiAJaGHos	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:21:25.736	2026-03-01 18:21:25.736	t
+27	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTMyMCwiZXhwIjoxNzcyOTk0MTIwfQ.54hbFcGxxJx2YXPIKT75yBUHyjP3wz4DaJK7fnN0Og0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:22:00.872	2026-03-01 18:22:00.872	t
+28	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjM4OTU0MSwiZXhwIjoxNzcyOTk0MzQxfQ.gV5aFXpssr73Ysn-FmuKYKCs1CpDA4Xj7ADrnnxB9Gg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-08 18:25:41.309	2026-03-01 18:25:41.309	f
+29	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNDMwMywiZXhwIjoxNzczMDM5MTAzfQ.kVLbhaaq5HvONMdXBLdUQsTwu5x7c9m5_fMIC_CuxqQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 06:51:43.664	2026-03-02 06:51:43.676	t
+30	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNDMxOSwiZXhwIjoxNzczMDM5MTE5fQ.Uxqpw-nsmQA1sbBlOMTYr9ocL-0M4vlxOTT7PUsWBSE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 06:51:59.169	2026-03-02 06:51:59.169	f
+43	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNzMzNywiZXhwIjoxNzczMDQyMTM3fQ.fAJiOHxT7eV7FuY6y1hKXqvF4E0Q3Bz3XWEuh3Ycs3A	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:42:17.461	2026-03-02 07:42:17.461	t
+31	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNDY5NSwiZXhwIjoxNzczMDM5NDk1fQ.z-dgZ2PUzXYGizB-HUigie6neTR6Y21IFFLmMuHhnIo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 06:58:15.059	2026-03-02 06:58:15.071	t
+272	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjcwMDQzNiwiZXhwIjoxNzczMzA1MjM2fQ.IbiF67EdaKlVbAeiHQIBH9OU1aGqONpQSJG8J9K9KY8	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 08:47:16.629	2026-03-05 08:47:16.63	t
+45	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNzc5NiwiZXhwIjoxNzczMDQyNTk2fQ.zvTl2tLVo2PEoWWNM9KJyC2SQMUF8C_YIO2tRfOopos	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:49:56.417	2026-03-02 07:49:56.418	f
+32	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNTE2NywiZXhwIjoxNzczMDM5OTY3fQ.AYI5j76gC4LUJBUt8Dc7sXXGcqszSza45bJfWODHgBA	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:06:07.149	2026-03-02 07:06:07.158	t
+34	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNTE5NCwiZXhwIjoxNzczMDM5OTk0fQ.GRPF_vxf7Mms6A2GszutDG-6am0JmxgWN8XaD4uVmLg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:06:34.977	2026-03-02 07:06:34.989	f
+36	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNTIyMCwiZXhwIjoxNzczMDQwMDIwfQ.5Ill55lk6cNym6TwxFP-Zs80whdtF9EENnpfNOw2emo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:07:00.973	2026-03-02 07:07:00.974	t
+37	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNTQ5MSwiZXhwIjoxNzczMDQwMjkxfQ.igIYejjLHu8RpJ6CHNONmDc4nEBEYpWX_d13YLTbt2A	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:11:31.868	2026-03-02 07:11:31.887	t
+38	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNjQ1MSwiZXhwIjoxNzczMDQxMjUxfQ.Y5UoF_3b045C29oTzCR3X9Li6tPNbJrtH-IN2kT3BOs	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:27:31.741	2026-03-02 07:27:31.742	t
+39	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNjY0MywiZXhwIjoxNzczMDQxNDQzfQ.Zto9vrXqFMVh3B9QVsijPV_Q614smxGpqKXbhZ-gug0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:30:43.449	2026-03-02 07:30:43.45	t
+40	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNjk4NSwiZXhwIjoxNzczMDQxNzg1fQ.z5uF-sICGNHKBdHAZPt98wZ3lBsKuRnjFgmRB-4hZmk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:36:25.447	2026-03-02 07:36:25.448	f
+42	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNjk5NSwiZXhwIjoxNzczMDQxNzk1fQ.ao08JrmEqgtOu-4D9Fln7TVUUbQ-DMYOp7VSqTmbGjc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:36:35.995	2026-03-02 07:36:35.995	t
+46	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzNzgzNywiZXhwIjoxNzczMDQyNjM3fQ.tLIrYwr3Ki7MKCMO4grt6nYVMdF2_nRK-afkDaZMM6c	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:50:37.614	2026-03-02 07:50:37.614	t
+47	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzODI4NSwiZXhwIjoxNzczMDQzMDg1fQ.Dea1JLUJV6Fg4BvCsnkHY78Jwif3X_LTjkV5N7WPyvk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:58:05.432	2026-03-02 07:58:05.433	f
+49	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzODMxMSwiZXhwIjoxNzczMDQzMTExfQ.cGHN-nRJnAqiepnfjFZrlaJafsHtvpJaYt0yQ7ZMEhM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 07:58:31.333	2026-03-02 07:58:31.334	t
+50	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzODcwNiwiZXhwIjoxNzczMDQzNTA2fQ.Gbdj3Sv-ToT8tSXMqaIbYInmQnwWajo6dIKX6RRJhY0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:05:06.873	2026-03-02 08:05:06.874	f
+52	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzODcxOSwiZXhwIjoxNzczMDQzNTE5fQ.WmNzsZqDAsSVyPdXkoyIuXQOKtL1PJqTlRtrUEB_EcY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:05:19.66	2026-03-02 08:05:19.66	t
+53	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzODk4NywiZXhwIjoxNzczMDQzNzg3fQ.1ZB2ndKasDtoQFq7wFQkmbK7cmcBsAxkONdmzRlOWIU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:09:47.508	2026-03-02 08:09:47.509	f
+55	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTMyOCwiZXhwIjoxNzczMDQ0MTI4fQ.gKS4XQZPjGfM361iVUWhGKfNSBF1DM0lo_-8j1C-r2w	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:15:28.852	2026-03-02 08:15:28.853	t
+56	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTMzOSwiZXhwIjoxNzczMDQ0MTM5fQ.VKNdF47MQb2bp1vOYpI7_9AjFkSxEvdm-F8qWq_THsc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:15:39.673	2026-03-02 08:15:39.674	f
+57	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTM0OCwiZXhwIjoxNzczMDQ0MTQ4fQ.sXSEzVBxWc5K24tYSwHrObtTqOsAKvZfaxygSjkPguE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:15:48.639	2026-03-02 08:15:48.639	t
+58	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTYwMCwiZXhwIjoxNzczMDQ0NDAwfQ.qq3WBD2YoVsngYjl4IE0IBDhh3sFbj3_FKHYWtvdab8	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:20:00.345	2026-03-02 08:20:00.346	f
+59	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTYwOCwiZXhwIjoxNzczMDQ0NDA4fQ.FM65we3YdjY_jK39288fjPJ5wHnf8LtSdVxRgyhmyvs	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:20:08.294	2026-03-02 08:20:08.294	t
+273	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNDgzNCwiZXhwIjoxNzczMzE5NjM0fQ.oawYtFmKbwR-aOueLkg1sSvEdjJLKFpvpBPVTpnm0bU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 12:47:14.612	2026-03-05 12:47:14.628	t
+62	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTYzMywiZXhwIjoxNzczMDQ0NDMzfQ.CnRJ5uFrqL4jdw7tbZTdl6-Fo4NChxJ4IbWrDGoVZTI	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:20:33.695	2026-03-02 08:20:33.696	t
+63	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTgwMiwiZXhwIjoxNzczMDQ0NjAyfQ.agVW4X1uIJwmRaI5ynBVfkyk2wcq33woAQ5GxNlPedg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:23:22.185	2026-03-02 08:23:22.185	f
+282	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNTg3OCwiZXhwIjoxNzczMzIwNjc4fQ.DDCXEgWzP08x0GEgd0SqA0tNzb7yauyL19TSVBncfQ8	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:04:38.424	2026-03-05 13:04:38.425	t
+65	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTgxNCwiZXhwIjoxNzczMDQ0NjE0fQ.KCuCBlL-_C_4YUDSX1G0Q6ehtul3bJ3zdcvxZ0BXBlE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:23:34.992	2026-03-02 08:23:34.993	t
+66	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTg4OCwiZXhwIjoxNzczMDQ0Njg4fQ.FPhSjAdwnJn7euaTNbMkehXKuqRoVU_czpaRIEYtOew	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:24:48.342	2026-03-02 08:24:48.343	f
+289	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjcxOTYzNiwiZXhwIjoxNzczMzI0NDM2fQ.9vktakHU5NcGxHNtn-9fAc0wJNzEWQZGs4l4ZwDovZk	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 14:07:16.921	2026-03-05 14:07:16.921	t
+68	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTg5NywiZXhwIjoxNzczMDQ0Njk3fQ.iDp6NXKcG9l-hIvHqRYUPnN9x1kYw8eIHTv6g0tE4yU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:24:57.625	2026-03-02 08:24:57.625	t
+69	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTkzNSwiZXhwIjoxNzczMDQ0NzM1fQ.7Jc9NWGPrajtGYA1-ldUVjGL_hdIYsHFemZFByyFKtA	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:25:35.806	2026-03-02 08:25:35.807	t
+70	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ0MDE3MCwiZXhwIjoxNzczMDQ0OTcwfQ.OUuXcKC9F9MDxEPrEEeUN5bdLsJ-CIZ5Kmu1VnREU2I	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:29:30.343	2026-03-02 08:29:30.344	f
+60	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQzOTYyMSwiZXhwIjoxNzczMDQ0NDIxfQ.SEnbpidEDK0raOXUi7osnw7misOewLNU37P50fqIZ6Y	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:20:21.055	2026-03-02 08:20:21.055	t
+72	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ0MDE3MSwiZXhwIjoxNzczMDQ0OTcxfQ.OWgPDmNEZii7mia1xVvikJdsBnlscTXNX13Vfj88_-Q	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:29:31.393	2026-03-02 08:29:31.394	f
+73	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ0MDE3OCwiZXhwIjoxNzczMDQ0OTc4fQ.cYZRn7EhW5oodVRG7jpi6FiNs9gGHdhu7T6F0ZW2DOE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 08:29:38.439	2026-03-02 08:29:38.439	t
+75	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjQwNiwiZXhwIjoxNzczMDcxMjA2fQ.GRDNNOe1tRpUKyvivdnhYMSRqzj4opg308fYrxjhweM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:46:46.12	2026-03-02 15:46:46.13	f
+76	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjQxNCwiZXhwIjoxNzczMDcxMjE0fQ.TBKMX718pAbY7Y919bTXcZhVCQ4G3ggSVSREcvEI2LA	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:46:54.877	2026-03-02 15:46:54.878	t
+77	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjQyNywiZXhwIjoxNzczMDcxMjI3fQ.cvruJuj3u2QiFptVgy1GrxvsGfvv1Y-BfwJkf9tXbPk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:47:07.603	2026-03-02 15:47:07.603	f
+274	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjcxNTAxMCwiZXhwIjoxNzczMzE5ODEwfQ.JqoF1jCaO19Sezqb9IHwYGJpbTUQbWZEkmHH-pMSIr4	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 12:50:10.826	2026-03-05 12:50:10.826	f
+89	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2Nzc1MiwiZXhwIjoxNzczMDcyNTUyfQ.vs8rzxe9UkjN5Pr7mQh9qYt0iwMbajbaRTP0nF16__A	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:09:12.12	2026-03-02 16:09:12.12	t
+79	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjQzNywiZXhwIjoxNzczMDcxMjM3fQ.xeTOhljZWzHZZxhJRLhqWScPl8lmb00m8FaaA2BFroI	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:47:17.248	2026-03-02 15:47:17.248	t
+80	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjYxNywiZXhwIjoxNzczMDcxNDE3fQ.cQY-QDef8mZDM5ZTLT4U8oLbDkmlDlwFASI8J_eJoXM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:50:17.552	2026-03-02 15:50:17.553	f
+82	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjY3MSwiZXhwIjoxNzczMDcxNDcxfQ.lu8oaT-mCigGeYh_TqubmfoKRLQVvYasNkAS07z0rKo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:51:11.271	2026-03-02 15:51:11.271	t
+83	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2Njc4NiwiZXhwIjoxNzczMDcxNTg2fQ.u8Gk6IjP82EbYeYK1Vzu4gIcfw2Shnkhzpin26r5Xus	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:53:06.94	2026-03-02 15:53:06.941	f
+84	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2Njc5NiwiZXhwIjoxNzczMDcxNTk2fQ.DU3w-JNNsM2STwUenVKNW49F1i9ffbv5AqWlIWXanDQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:53:16.225	2026-03-02 15:53:16.225	t
+85	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NjgwMSwiZXhwIjoxNzczMDcxNjAxfQ.K272LZfXZl8PF3ISm6-TqakqWThOyT-xZfijDDkFRWg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:53:21.522	2026-03-02 15:53:21.523	f
+90	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2Nzc2NiwiZXhwIjoxNzczMDcyNTY2fQ.DSbRd27JQ9KRhv5HhlaQhDXdw2cOppYen6IQXNSm--4	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:09:26.27	2026-03-02 16:09:26.27	f
+86	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2Njg4NCwiZXhwIjoxNzczMDcxNjg0fQ.JyRSvaPu_DZbM0-F3IqHEm9fWSHUiGkOIkseh4gPtU4	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 15:54:44.061	2026-03-02 15:54:44.061	t
+87	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NzYzOCwiZXhwIjoxNzczMDcyNDM4fQ.vms4yEf9Hf0DlGFQqDbvN6EiQvwJWZG3t_RqjVwh1rU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:07:18.121	2026-03-02 16:07:18.121	f
+92	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2NzkzNiwiZXhwIjoxNzczMDcyNzM2fQ._zIbR7dgV1GQ35f0konEcuT2KHcXYmK_b4jjFgG7yrg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:12:16.066	2026-03-02 16:12:16.066	t
+93	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2OTkyNywiZXhwIjoxNzczMDc0NzI3fQ.kzBsiQTpDMP9NKc0vA9An76fn0VbR_eXl4tjsYT7K8M	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:45:27.146	2026-03-02 16:45:27.159	t
+94	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ2OTk1MiwiZXhwIjoxNzczMDc0NzUyfQ.WUt-Q2prT6pTc8kXpSysqlmjS5B65EvdREYSHmY8G5o	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:45:52.045	2026-03-02 16:45:52.046	t
+95	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MDU0NSwiZXhwIjoxNzczMDc1MzQ1fQ.6J9P5ZLYsC6KuESQCHqrIo7lP6G7jaZaF1YAJFKQcdg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:55:45.294	2026-03-02 16:55:45.295	f
+99	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MDgwNiwiZXhwIjoxNzczMDc1NjA2fQ.rIkcCAEps99LbolV6JA7-eolfCm4UFCsSyQDgbKXb7s	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:00:06.06	2026-03-02 17:00:06.06	t
+96	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MDU1NCwiZXhwIjoxNzczMDc1MzU0fQ.tA_-awfGPIuz3BdDSqiLJED9uvzXQ7cg2qmvKPRZ2ik	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:55:54.11	2026-03-02 16:55:54.11	t
+97	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MDc5MywiZXhwIjoxNzczMDc1NTkzfQ.u347NZ0T2peKXuGT3XaOMciUxb0kfMT6byH4ZUUQT5g	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 16:59:53.838	2026-03-02 16:59:53.839	f
+100	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MTQ2MCwiZXhwIjoxNzczMDc2MjYwfQ.6ooDHYRUf_jkOlqxsNuYvpZSl2bcFbRyVC21aeBYves	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:11:00.964	2026-03-02 17:11:00.972	t
+101	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MjE4MCwiZXhwIjoxNzczMDc2OTgwfQ.yt2ri5XpyM8kig5B35uoVey5PztWQjxQU6B7jAUXJ20	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:23:00.413	2026-03-02 17:23:00.414	f
+102	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MjQ3MywiZXhwIjoxNzczMDc3MjczfQ.LwUvxutJuY377DujNV-z4grTSNAm2QqNuP-trkS4JrY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:27:53.956	2026-03-02 17:27:53.956	t
+103	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3Mjk1MCwiZXhwIjoxNzczMDc3NzUwfQ.8xKGew3K3TMLc3hM3hIq6o4oVVy0UDLuxVPH9QKll_M	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:35:50.328	2026-03-02 17:35:50.329	t
+122	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3ODAzNiwiZXhwIjoxNzczMDgyODM2fQ.OBLAB-XsyVYQDCDdKBfuB5qmq9TdMoAiF6PS5xbvA7U	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:00:36.168	2026-03-02 19:00:36.169	t
+104	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3MzA2NSwiZXhwIjoxNzczMDc3ODY1fQ.v_x6FRuW9-t0xWv-QJHOR82bnNjwhNbRBP656Cp7PdU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:37:45.245	2026-03-02 17:37:45.246	t
+275	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjcxNTA0NSwiZXhwIjoxNzczMzE5ODQ1fQ.kRytmFsIFNoXQQPF40FrHyVXtaDh6kSk84sr5J7D9Qg	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 12:50:45.673	2026-03-05 12:50:45.673	t
+115	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NjIwNiwiZXhwIjoxNzczMDgxMDA2fQ.8zLmBTmTBf84saImc0t0odNiL4ERcPckmPNt5S67Fj4	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:30:06.889	2026-03-02 18:30:06.89	t
+106	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NDIwOCwiZXhwIjoxNzczMDc5MDA4fQ.dvan-UiunsJXPZYEy3XEyDtxQHtT4Q9s-a2vihijG_E	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:56:48.858	2026-03-02 17:56:48.882	t
+283	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNjcwMywiZXhwIjoxNzczMzIxNTAzfQ.sw2U2Dt79DYdPO54dbPyShtJq7nM-Wv6sUm7KWBQr7E	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:18:23.676	2026-03-05 13:18:23.676	t
+108	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NDIyMywiZXhwIjoxNzczMDc5MDIzfQ.zHim4nsUrmG5SAKnviEhXuBtIO_6AdMuPSlhAIbXZmI	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 17:57:03.015	2026-03-02 17:57:03.016	t
+110	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NDg3MywiZXhwIjoxNzczMDc5NjczfQ.96SPXI1qszW02asPM07hJdNq6ejZ8fpHbosUCtGkErs	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:07:53.857	2026-03-02 18:07:53.868	f
+111	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NDkwNCwiZXhwIjoxNzczMDc5NzA0fQ.4O1kLxymEsUuAIGd3V08IGchfFSKLC23Q1qWqBZq0Co	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:08:24.263	2026-03-02 18:08:24.263	t
+116	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NjIxNiwiZXhwIjoxNzczMDgxMDE2fQ.QJLui03WI4Uo-XDS_nKDjStOr7DfV9ZuO-6EgzD_G5I	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:30:16.207	2026-03-02 18:30:16.208	f
+112	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NDkwOSwiZXhwIjoxNzczMDc5NzA5fQ.omlMOg46mhLMs-VjsGKpQRdxQr4Wh4aDXZxZHmcxNqY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:08:29.42	2026-03-02 18:08:29.421	t
+113	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NTAzNywiZXhwIjoxNzczMDc5ODM3fQ.jwJtgt-8OAqRci4hnYS5WxgI356Yoonsjr8NAdZoEEs	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:10:37.418	2026-03-02 18:10:37.419	t
+284	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNjcyNSwiZXhwIjoxNzczMzIxNTI1fQ.s4Fnt6sBBUkGY3YQEzdQMP7i0_ZGflDTvc1ZxR82c64	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:18:45.018	2026-03-05 13:18:45.018	t
+118	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NjIyNiwiZXhwIjoxNzczMDgxMDI2fQ.mjIRtMrZXsBrMv0rn4B9AZIpD816ONfDf7TmZuqw9Zc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:30:26.755	2026-03-02 18:30:26.755	t
+119	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3Njc3OSwiZXhwIjoxNzczMDgxNTc5fQ.ndO5c7yX47NApqOn-YHg9T4VHNtqr9LaNeFn1QJhcU0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:39:39.095	2026-03-02 18:39:39.11	t
+290	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcyNzk4OCwiZXhwIjoxNzczMzMyNzg4fQ.olz5VnFVx8Vbai3YimiDkDz_Iyik5m0wjqj5HxyYIWk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 16:26:28.031	2026-03-05 16:26:28.032	t
+120	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3NzY5MiwiZXhwIjoxNzczMDgyNDkyfQ.GxvI_2zpykVaGS141aexePq2pfFGOaQzgY5e81xiVBo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 18:54:52.334	2026-03-02 18:54:52.35	t
+123	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3ODA0MywiZXhwIjoxNzczMDgyODQzfQ.bkUgG3QWG0DxvFfPqD9q4arDLXa_C3_mS-2TEBEio1E	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:00:43.736	2026-03-02 19:00:43.736	t
+125	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3ODA4NywiZXhwIjoxNzczMDgyODg3fQ.B1W9GxjGgVMdnjRWlc_tEzf8Ri4dFhGv6VaJXKJtAtY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:01:27.164	2026-03-02 19:01:27.166	t
+127	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3ODI2NCwiZXhwIjoxNzczMDgzMDY0fQ.8IOkEJFQccrTOERP3O6Z_VhJK7xP4yyiItcxpo8hBLQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:04:24.224	2026-03-02 19:04:24.249	t
+130	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3OTIwNywiZXhwIjoxNzczMDg0MDA3fQ._ZTIAon-4vhyN8O2hIO6tIwMcouXHbpgtMz38iDnxuo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:20:07.691	2026-03-02 19:20:07.691	t
+128	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3ODMzMiwiZXhwIjoxNzczMDgzMTMyfQ.KZYeqpVBui_wypNVV6OuJOwHibVoaLayw4f6iBGOM7I	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:05:32.724	2026-03-02 19:05:32.725	t
+276	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNTEzOSwiZXhwIjoxNzczMzE5OTM5fQ.gpVc0HOCIEuR0WzfEZ9lHYD6XtB-qFbzJZRna6cG_3I	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 12:52:19.641	2026-03-05 12:52:19.641	t
+143	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNTkzNCwiZXhwIjoxNzczMTMwNzM0fQ.XqgRfGbXajRNAx54GoM0AB5tygmtlDVE2w6ESZxGyWE	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:18:54.96	2026-03-03 08:18:54.972	t
+132	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ3OTc5NCwiZXhwIjoxNzczMDg0NTk0fQ.6CJF5WO_n_hQdjXN1jzQHZuRPXF1omwnLQyAlot9M2M	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:29:54.218	2026-03-02 19:29:54.219	t
+134	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ4MDQzOSwiZXhwIjoxNzczMDg1MjM5fQ.WNVki8il5dtOe5tEEj6p1XLLfCiyMkml8LhDqNiVIrM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:40:39.772	2026-03-02 19:40:39.773	t
+145	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNTk3NCwiZXhwIjoxNzczMTMwNzc0fQ.dnACc34NqMxKnoQ3IzjwiZBsPOYif7yNLZALeEXs8dU	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:19:34.638	2026-03-03 08:19:34.638	f
+136	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ4MDUwNiwiZXhwIjoxNzczMDg1MzA2fQ.8yVMG1JFBDbc4wRA2fzmlnereALy-_A9VRWEuDdMseo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:41:46.486	2026-03-02 19:41:46.487	t
+285	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNjczOCwiZXhwIjoxNzczMzIxNTM4fQ.6fVmUCETqDJNUD6SIFWbukiGwrynw9Jl8vPZalAHdDo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:18:58.183	2026-03-05 13:18:58.183	t
+137	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ4MTA2OCwiZXhwIjoxNzczMDg1ODY4fQ.zVAbAQfaykrIF0bBPrj1loGttPKpl_M0filMibUyc44	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 19:51:08.346	2026-03-02 19:51:08.364	t
+291	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxZTYxN2FlMS03MGI5LTRhZDctYWUzMy03N2IxMGFlNzJjZGYiLCJlbWFpbCI6InRlc3QxQHRlc3QuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NzI3MjgzMDEsImV4cCI6MTc3MzMzMzEwMX0.7VRPQvhdxddzYoj-RtOfNKk8EG81MKmcsDoCaNH1KME	1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	2026-03-12 16:31:41.62	2026-03-05 16:31:41.62	f
+139	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjQ4MzI3OSwiZXhwIjoxNzczMDg4MDc5fQ.LmcPMpSZ_7u8Mghqs60c2u3jEBjgE0QNj1v-UB3r638	6198f028-7653-4722-b5f6-5e452da19990	2026-03-09 20:27:59.953	2026-03-02 20:27:59.969	t
+141	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzcyNDgzMzA5LCJleHAiOjE3NzMwODgxMDl9.jD5kyxCTQTTclqo8xSe275c2wJIfVNvqpiQ98RZDyaE	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-09 20:28:29.876	2026-03-02 20:28:29.877	t
+153	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNzI4MywiZXhwIjoxNzczMTMyMDgzfQ.vtuOeHFx_UFNogrlJgHseESeL8L3Thr5q5ig3wGzGRc	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:41:23.49	2026-03-03 08:41:23.491	t
+142	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjQ4MzU0OCwiZXhwIjoxNzczMDg4MzQ4fQ.ra6shhX8duvoS8DsYJLFQ59ZREdQE1aTYYsL3KO7Hnw	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-09 20:32:28.464	2026-03-02 20:32:28.464	t
+146	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNjk0NywiZXhwIjoxNzczMTMxNzQ3fQ.X0E0t7kTk33TyECMbXou8NJvRmTizI9235McksMplU4	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:35:47.332	2026-03-03 08:35:47.332	t
+292	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIxZTYxN2FlMS03MGI5LTRhZDctYWUzMy03N2IxMGFlNzJjZGYiLCJlbWFpbCI6InRlc3QxQHRlc3QuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NzI3MjgzMDYsImV4cCI6MTc3MzMzMzEwNn0.hAvz6LfgHDSHqo1sXE-iwM7EDgiMQKW3nE6HAiumWhs	1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	2026-03-12 16:31:46.847	2026-03-05 16:31:46.848	t
+147	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNjk2OCwiZXhwIjoxNzczMTMxNzY4fQ.ZVAWxwgnkx9ud_E2mMMxTygroX6FEs2TP5Hpq0mE7UA	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:36:08.646	2026-03-03 08:36:08.646	t
+149	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNjk5MSwiZXhwIjoxNzczMTMxNzkxfQ.C01VU9Uem5cWgwlquu06bbooQf2oom6k7e_lWjB2-Qc	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:36:31.904	2026-03-03 08:36:31.904	t
+150	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNzAwOCwiZXhwIjoxNzczMTMxODA4fQ.K-RgwDJYK438FNHD8KIjjPuv-lf9exFTVNTfyKQMSM4	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:36:48.861	2026-03-03 08:36:48.861	f
+152	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNzA2OSwiZXhwIjoxNzczMTMxODY5fQ.gRZNdCxo0WH_hmOQ_VhVUIsmr-dNUZONP-7qc7vQXLU	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:37:49.232	2026-03-03 08:37:49.233	f
+157	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyODE5OSwiZXhwIjoxNzczMTMyOTk5fQ.P-NOBlTu6JqsmDgY3mibOe2b-VU-1ppNg7_egIMrQuY	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:56:39.734	2026-03-03 08:56:39.734	t
+154	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyNzUxOCwiZXhwIjoxNzczMTMyMzE4fQ.Bk8b8Im2vfFa4xdXZCD-uzRKnn_P4cjfETvlJVssoMw	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:45:18.14	2026-03-03 08:45:18.141	t
+155	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyODA3MywiZXhwIjoxNzczMTMyODczfQ.U6AIsEyCjfggtFZ8d0PwxJNr90N1MLNrQfyR2Mv3jvY	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:54:33.132	2026-03-03 08:54:33.132	t
+159	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyODIzMSwiZXhwIjoxNzczMTMzMDMxfQ.0BjFqxIv_RhKjw0b6v6KaUKgVu8OeAB-JxOcVQ2QSoI	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 08:57:11.663	2026-03-03 08:57:11.663	t
+160	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyODk0MCwiZXhwIjoxNzczMTMzNzQwfQ.x9fsBmSD7WYCiKiaxThL9a2-kmILJ0FeFaMH8oJzF8g	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:09:00.381	2026-03-03 09:09:00.381	t
+161	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUyODk5NSwiZXhwIjoxNzczMTMzNzk1fQ.XFPLCarXyIVrYPhW8QeznqsCQkrffRUh6qFr6k7ItaQ	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:09:55.15	2026-03-03 09:09:55.15	f
+162	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUzMDI0NywiZXhwIjoxNzczMTM1MDQ3fQ.eBWVNZ6R3v2qLYKk80piVBn9UT3MrVokyesLkUybJDY	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:30:47.317	2026-03-03 09:30:47.326	t
+171	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU2MTQ4NCwiZXhwIjoxNzczMTY2Mjg0fQ.z5B56P4fo3eAquHIXeqoswnHENfO9viLWHN3raBbJ4s	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 18:11:24.661	2026-03-03 18:11:24.668	t
+163	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUzMDQ5NywiZXhwIjoxNzczMTM1Mjk3fQ.teJYxUBqqkt9IyOljPyoGqq7c_6JfTDsJ8jU0qRDBmc	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:34:57.843	2026-03-03 09:34:57.843	t
+164	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUzMTYzNywiZXhwIjoxNzczMTM2NDM3fQ.IX9kMfGQvlLzYrAN6-_Jgg60PzTXt7BPxUdmrWUd4PQ	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:53:57.176	2026-03-03 09:53:57.176	f
+166	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUzMTY0OSwiZXhwIjoxNzczMTM2NDQ5fQ.REXuGl0d0yhyQGj5btvvyaoFhNroCvD40yKSDmmrh3A	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:54:09.579	2026-03-03 09:54:09.579	t
+167	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjUzMTY4MCwiZXhwIjoxNzczMTM2NDgwfQ.zSdoyrwgeS1Bd2EPkH5_P0-tWiAAUgn_E-NjPPux9eY	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 09:54:40.557	2026-03-03 09:54:40.557	t
+168	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjUzNzAwNiwiZXhwIjoxNzczMTQxODA2fQ.SDP14x-2eEk97asGY7UHgYuZ3dTIAY9W4_DfMd4DH5A	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 11:23:26.107	2026-03-03 11:23:26.117	f
+169	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU1OTg2OSwiZXhwIjoxNzczMTY0NjY5fQ.Lw29Jre2S11FqdIK781vCFeq2UttJaprC0GGVENszgQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 17:44:29.601	2026-03-03 17:44:29.615	t
+170	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjU2MDA0NCwiZXhwIjoxNzczMTY0ODQ0fQ.yRRhIfGYkfLXoDkfLl01sZJKejaLAZ0ZGVHOc6oUcak	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 17:47:24.856	2026-03-03 17:47:24.858	t
+172	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU2MjQwMSwiZXhwIjoxNzczMTY3MjAxfQ.q5Ru51TTzoxTP5fnvsVaMyI6h2P0GnIotHk-2QdWc8E	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 18:26:41.491	2026-03-03 18:26:41.504	f
+173	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU2MjQxNSwiZXhwIjoxNzczMTY3MjE1fQ.dnmEOrK80BJ2mY-I2k0RKXlbhyi2emj-1MYZwGCmnoQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 18:26:55.483	2026-03-03 18:26:55.484	t
+174	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjU2MjU5OCwiZXhwIjoxNzczMTY3Mzk4fQ.UTFal1QgtUx3CjHDhQ83dr0r_JE_DVAKIVed7jJXT_w	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-10 18:29:58.192	2026-03-03 18:29:58.192	t
+176	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU2Mjc0OSwiZXhwIjoxNzczMTY3NTQ5fQ.KUSoEiBn1Oxtm8GuBXh8FkxkNeaDNpl0iqoIe00f8iY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 18:32:29.129	2026-03-03 18:32:29.13	t
+175	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU2MjY5MCwiZXhwIjoxNzczMTY3NDkwfQ.jfrW20d1Uhk--E-7hr7iXrXTlVjuhVP6gSZujlFGGWM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 18:31:30.664	2026-03-03 18:31:30.664	t
+178	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjU2MzkwOCwiZXhwIjoxNzczMTY4NzA4fQ.Uy4oL75o1SXd_IPmDDaOG4cGYzV6zLsHxNxfZoK9PhU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-10 18:51:48.371	2026-03-03 18:51:48.382	t
+179	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwMDAyMSwiZXhwIjoxNzczMjA0ODIxfQ.PysTye01e7027YwmeKe-Loh3M664w9NkgtRwJ9ke3C0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 04:53:41.354	2026-03-04 04:53:41.368	t
+180	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwMDMwMSwiZXhwIjoxNzczMjA1MTAxfQ.0WEJgy6hS4xJBj3A-or4RPcX4wostweir5ANxnhPeKw	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 04:58:21.737	2026-03-04 04:58:21.737	f
+182	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwMzEyNCwiZXhwIjoxNzczMjA3OTI0fQ.RnEbFa-PVat9jxNdSebB9DfpwhOZGQAoHQqXxw5ZLzw	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 05:45:24.132	2026-03-04 05:45:24.14	t
+181	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwMDM1NywiZXhwIjoxNzczMjA1MTU3fQ.gCDyH7P78_SyTljq41qvaHExAFrD_RkzVtbg9_DShOM	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 04:59:17.453	2026-03-04 04:59:17.453	t
+277	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNTg0NCwiZXhwIjoxNzczMzIwNjQ0fQ.NhpxF0L0-BnvsXJqDDlCagkx3SuU_QOnI5uzTHR0BYk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:04:04.483	2026-03-05 13:04:04.484	t
+184	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwMzEzNSwiZXhwIjoxNzczMjA3OTM1fQ.pMEtXdn-xWC24dqWDAsdpMSb1qhu7v9X-Y9v5DoQIk4	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 05:45:35.399	2026-03-04 05:45:35.399	t
+195	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNTE1MCwiZXhwIjoxNzczMjA5OTUwfQ.1Tf8vlRmkobphI-3zjP8Iy5mkSAVeeRE_Lwf91IkZPA	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:19:10.257	2026-03-04 06:19:10.269	t
+185	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwMzIwMCwiZXhwIjoxNzczMjA4MDAwfQ.9-bod9pdtgpohAGMBVIkbIPXzg3EOaQ4uUDB4vphgLQ	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 05:46:40.428	2026-03-04 05:46:40.428	t
+186	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwMzQ3OSwiZXhwIjoxNzczMjA4Mjc5fQ.ITwJxPGA6D4aIgHVLO8z7oPQQotgJzAkGO_BuPQu_bU	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 05:51:19.511	2026-03-04 05:51:19.512	t
+188	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwMzQ4NSwiZXhwIjoxNzczMjA4Mjg1fQ.5vk89IqT_8t-4UDg-k4YaykvPrU9hClYkNIo2esbBvg	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 05:51:25.113	2026-03-04 05:51:25.113	t
+190	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwNDE2NSwiZXhwIjoxNzczMjA4OTY1fQ.kv7DEt2bDcn-loYz_JZw__iSRBOgwq_BRYOnMmJ9yA4	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 06:02:45.141	2026-03-04 06:02:45.151	t
+191	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNDQ2NSwiZXhwIjoxNzczMjA5MjY1fQ.CAlOBxYivrQMR7ikm8doCAkehhaywox0APS2mTCu6U8	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:07:45.611	2026-03-04 06:07:45.614	t
+192	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNDQ4OSwiZXhwIjoxNzczMjA5Mjg5fQ.2aBiHEZmPhkCDXoFpnDtKd3li8JzzBhoftbJbIX4w3k	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:08:09.62	2026-03-04 06:08:09.62	t
+193	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNDUwNSwiZXhwIjoxNzczMjA5MzA1fQ.C21Y-WO9qY6PYlqsYBkXoEqkzFmHV9CmTAqId1WXLQo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:08:25.486	2026-03-04 06:08:25.486	t
+194	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNDY4OSwiZXhwIjoxNzczMjA5NDg5fQ.cIvs4ooiKb0_PtDeuK45VZDvXmm5C_QGG3pbUpYYycE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:11:29.386	2026-03-04 06:11:29.386	t
+196	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNjYwNCwiZXhwIjoxNzczMjExNDA0fQ.yE_7XDaRELPu4H_3RH3-NAYZjBu6JuTmBQytVfMb7D8	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:43:24.26	2026-03-04 06:43:24.275	t
+197	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNjg3NSwiZXhwIjoxNzczMjExNjc1fQ.5-yio4KHSfUEDG4dOmM85vBZD-73uSVbkt7Tuc4EDB0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:47:55.412	2026-03-04 06:47:55.421	t
+202	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwODM1MywiZXhwIjoxNzczMjEzMTUzfQ.tkQsKbmbULBKe6ZG6EPAONHn7wat7CcthSm9SHcU_pk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:12:33.869	2026-03-04 07:12:33.87	t
+198	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNzE2OCwiZXhwIjoxNzczMjExOTY4fQ.CufNEvEJYmeDvjQRDoePSlkMt4NQ6md9NVgM2W85HBY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:52:48.618	2026-03-04 06:52:48.624	t
+293	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjcyODg4MiwiZXhwIjoxNzczMzMzNjgyfQ.wAJ0nCF9OkH78VxtfCutW3rLbaY2D9dQrgCZKGZIYpk	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 16:41:22.188	2026-03-05 16:41:22.188	t
+199	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNzQ1MCwiZXhwIjoxNzczMjEyMjUwfQ.hkWXuerLHCLi4pSMY7zDX8-4LLqSaLrDecrFbBiesPg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 06:57:30.32	2026-03-04 06:57:30.321	t
+201	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwNzYwNywiZXhwIjoxNzczMjEyNDA3fQ.ZsizWaE4_mMqVex6-y4JtgsdeEl5nkRJpYYaey_6CQM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:00:07.977	2026-03-04 07:00:07.978	t
+286	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxOTEwOCwiZXhwIjoxNzczMzIzOTA4fQ.LzbEheyhpvJZjDCB-szvlcIUEjqWYASA1Yewjvvs0Ls	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:58:28.86	2026-03-05 13:58:28.861	t
+204	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwODM3MCwiZXhwIjoxNzczMjEzMTcwfQ.jOL4etlSqn6kb_UaQxZd-h9cN0bCfxla_KC3OHPjBWE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:12:50.596	2026-03-04 07:12:50.596	t
+207	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwOTAyMywiZXhwIjoxNzczMjEzODIzfQ.ey-qFEvzkTNBAAq2VhZ05GzzhulkfI7MJ70dNNI3QOc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:23:43.575	2026-03-04 07:23:43.592	f
+205	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwODQ3MCwiZXhwIjoxNzczMjEzMjcwfQ.4XS87dKvUPtXHHvD7DYS70cZXVFQxBG6Mvs05FQADgk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:14:30.956	2026-03-04 07:14:30.958	t
+208	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYwOTI4OSwiZXhwIjoxNzczMjE0MDg5fQ.G_VY-tMpAwG3F1Tt76sdudpfX5voZhN9PNQk2ZosPZo	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:28:09.19	2026-03-04 07:28:09.191	t
+209	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYwOTkxMiwiZXhwIjoxNzczMjE0NzEyfQ.ZuwARbj_9wSDQWUb_lUu1B0eWIwZC66ptIqETR7f8Js	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 07:38:32.085	2026-03-04 07:38:32.085	t
+210	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYxMDcyOCwiZXhwIjoxNzczMjE1NTI4fQ.dxDDZ0TzcAYfMWqASKFdtvK_JU9OSHI7UJjjQqLeXZQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 07:52:08.234	2026-03-04 07:52:08.234	t
+211	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYxMTIwNiwiZXhwIjoxNzczMjE2MDA2fQ.Pw7nsO7kty_Nj-dQtTZWSdoFEUlxHjnVmlyzYrOXDzI	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 08:00:06.319	2026-03-04 08:00:06.319	t
+213	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYyODY0NywiZXhwIjoxNzczMjMzNDQ3fQ.5BwKeBKANHX5u8sGP0Ql3UfqJlXtejrilolZ1IiRUUg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 12:50:47.232	2026-03-04 12:50:47.25	f
+223	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYzMTg3NSwiZXhwIjoxNzczMjM2Njc1fQ.ByEZ-enbGN3sxV0mOcGF8Wklsd8nhsR3lqBvbKTCGBY	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 13:44:35.202	2026-03-04 13:44:35.202	t
+212	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYxMjE0MCwiZXhwIjoxNzczMjE2OTQwfQ.fREwfGBjWuaars9SIn2B8oqMYDwDokLrE3UyKFHMCsc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 08:15:40.77	2026-03-04 08:15:40.77	t
+278	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNTg0OSwiZXhwIjoxNzczMzIwNjQ5fQ.Vg0cnEij8y3Sj8FoYvK3A4RSnji2EjhNIxGQJxgpNWs	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:04:09.511	2026-03-05 13:04:09.512	t
+214	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYyOTgzMCwiZXhwIjoxNzczMjM0NjMwfQ.RZzEsQnKCwGyuw2bzFxP2NJ8yvUnpAL12dsU561fV6M	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:10:30.261	2026-03-04 13:10:30.282	t
+216	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYyOTg0MCwiZXhwIjoxNzczMjM0NjQwfQ.58ZQ-A8jvTs9JlNfAt8B3MIUlQuQBAK859N-snq2o8s	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:10:40.917	2026-03-04 13:10:40.918	t
+217	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYyOTg4OCwiZXhwIjoxNzczMjM0Njg4fQ.RDk1SXHoMBa4n1SInQ7Rx_lBwcIGyir7CWYZQBhC5xg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:11:28.42	2026-03-04 13:11:28.42	t
+218	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzMDE3NiwiZXhwIjoxNzczMjM0OTc2fQ.-lrLAZzGe3Uvouy3tH9sClxfeAHdHRNPMmAYJ3xPzQw	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:16:16.018	2026-03-04 13:16:16.018	t
+220	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzMDY1OCwiZXhwIjoxNzczMjM1NDU4fQ.GQ9J-_MC56-rFdBgRYaDTno0GBlXxIuivuVzeB4PVH4	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:24:18.131	2026-03-04 13:24:18.131	f
+221	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzMTYwMCwiZXhwIjoxNzczMjM2NDAwfQ.ye7x7CweLzRZQ1ZxHfpt5ZuT6J4pvX_RiEhZdaCDmJw	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:40:00.353	2026-03-04 13:40:00.371	t
+222	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYzMTg1MywiZXhwIjoxNzczMjM2NjUzfQ.A_zQMcyR8FHIRCnmzrwOeB_Ma3NY_QYXW_iblkz1POg	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 13:44:13.489	2026-03-04 13:44:13.495	t
+225	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzMTk2OCwiZXhwIjoxNzczMjM2NzY4fQ.RK_UGUfAsZ0MKwPsrKdg9t0tZ62KU3qAZQy_JASLjjY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 13:46:08.899	2026-03-04 13:46:08.9	t
+226	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjYzMjQ5MywiZXhwIjoxNzczMjM3MjkzfQ.AdQjxyJWgkHrtQSX5VGBaGRzH6mOTMyYbTraPUXxdP4	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 13:54:53.104	2026-03-04 13:54:53.105	t
+227	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzNDI1MSwiZXhwIjoxNzczMjM5MDUxfQ.D-PF1kzMXfqCht4WKeWPj8e3D7spA_oPRNoi2JkdlFU	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 14:24:11.899	2026-03-04 14:24:11.913	t
+229	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzNjA1MCwiZXhwIjoxNzczMjQwODUwfQ.93AJDmqylOM0eqeOtQmSE4i0trULNkmlAwhzYbVyE9M	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 14:54:10.51	2026-03-04 14:54:10.511	t
+228	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzNTkyNCwiZXhwIjoxNzczMjQwNzI0fQ.EEj7IvdwDn7iEZZjBj3XJ0e_MSVsFbJL4DoMJvrHGhc	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 14:52:04.831	2026-03-04 14:52:04.847	t
+280	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxNTg1MCwiZXhwIjoxNzczMzIwNjUwfQ.gY1xSgnrTBMkyRsQGI8hiMe8dYqR94XR88iluZdDIQE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:04:10.833	2026-03-05 13:04:10.833	f
+253	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY5MTUxOSwiZXhwIjoxNzczMjk2MzE5fQ.TPc5w6wFL9mF8_rZrLtUzCNm8NTkfvmGaKgsNo7HdBk	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 06:18:39.163	2026-03-05 06:18:39.169	t
+287	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcxOTEyNCwiZXhwIjoxNzczMzIzOTI0fQ.Iwp2a_DkLRnZuchBfCe6dSOIx05GE2K9lw-QsYc1nqA	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 13:58:44.543	2026-03-05 13:58:44.543	t
+241	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY0MDEyMywiZXhwIjoxNzczMjQ0OTIzfQ.VJZwfN8ikw5y3wx1aNztkcnz94r4XqKKZ2lOMdkbS6A	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 16:02:03.341	2026-03-04 16:02:03.341	t
+247	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY4ODYwOCwiZXhwIjoxNzczMjkzNDA4fQ.KbG756iBJ_8sbVp8TixfAAXa7gkgRL2Xrgxl_LhPJ_E	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 05:30:08.04	2026-03-05 05:30:08.04	t
+294	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcyOTE2MCwiZXhwIjoxNzczMzMzOTYwfQ.A2qB1Tiux9PcVaF1ilUCyu8_lMqe-X3yJuO2I7yzExE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 16:46:00.905	2026-03-05 16:46:00.905	t
+235	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzNzAxMSwiZXhwIjoxNzczMjQxODExfQ.25F1SVbJBboyr_mhA9jrDIiIZOm-532plMcl4ygxtEY	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 15:10:11.817	2026-03-04 15:10:11.817	t
+236	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzNzE0MCwiZXhwIjoxNzczMjQxOTQwfQ.lwcs_hn43ZGH9-SeIPtjupjHntEFtVNd8bzapN0jYTE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 15:12:20.766	2026-03-04 15:12:20.766	t
+237	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzNzQ5MiwiZXhwIjoxNzczMjQyMjkyfQ.tLkNosMp0movh_oVibV7i-aqnuOmFF1i8feoEQrzSkg	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 15:18:12.27	2026-03-04 15:18:12.27	t
+238	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzODExNywiZXhwIjoxNzczMjQyOTE3fQ.CP_W98HaOBtU3fIyLj8BeMmXFVc8y-tpkZsnpt_O9l0	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 15:28:37.155	2026-03-04 15:28:37.163	t
+239	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzOTI3MSwiZXhwIjoxNzczMjQ0MDcxfQ.0hX_qhLLOWM3ZxVb3Qq9ZaPXr3m6qeim29mt0YifjDE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 15:47:51.661	2026-03-04 15:47:51.662	t
+240	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjYzOTU0MywiZXhwIjoxNzczMjQ0MzQzfQ.mN8XNGe9RS4JFfglO2IuwBXtgO0buE64Aga3IZ9zh2w	6198f028-7653-4722-b5f6-5e452da19990	2026-03-11 15:52:23.533	2026-03-04 15:52:23.533	t
+242	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY0MDMwOSwiZXhwIjoxNzczMjQ1MTA5fQ.D7ZB5-ipQJffoEHQUB3DtKe-4Hlna15W-tETudG1s54	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-11 16:05:09.582	2026-03-04 16:05:09.583	t
+244	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY4NzQwOSwiZXhwIjoxNzczMjkyMjA5fQ.GHW2LqPvoeFayB3-LKSXpZTg8iqFi2rCv1KFx9qcwnk	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 05:10:09.556	2026-03-05 05:10:09.565	f
+245	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY4ODMzNCwiZXhwIjoxNzczMjkzMTM0fQ.brrnxrLAIm1QRc7ZorJFBWSZSjh0FEdvyVaTSeTK83o	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 05:25:34.89	2026-03-05 05:25:34.892	t
+246	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY4ODQwMiwiZXhwIjoxNzczMjkzMjAyfQ.a499OCgrE4eFxdJrIZssd7COi3qXYuUi-zZOwK5CWcQ	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 05:26:42.057	2026-03-05 05:26:42.057	t
+251	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY4ODY3MCwiZXhwIjoxNzczMjkzNDcwfQ.JyuKWuAOJZr4hyHwUBV_89_D01atRu4re4piBwSBh3w	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 05:31:10.956	2026-03-05 05:31:10.956	t
+252	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY5MDE2MSwiZXhwIjoxNzczMjk0OTYxfQ.mXZl6eOBd5E1ZQCTshAASjRw_FrEp5Xj7aJ46v-Y430	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 05:56:01.671	2026-03-05 05:56:01.671	t
+257	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5MjkwMSwiZXhwIjoxNzczMjk3NzAxfQ.78WM1_WI38r1vUdTAI3b6sUIpQoC2QTeoe9STyJek3c	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 06:41:41.538	2026-03-05 06:41:41.539	t
+258	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhMzM3NGViYS01NzA0LTQ1ZmYtODkxMS0yYjk5MmFiNWQ2YTMiLCJlbWFpbCI6IktpdGlrb3JuQDEyLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzcyNjkyOTY0LCJleHAiOjE3NzMyOTc3NjR9.trDcFuLl7JyZzmQ3rSkxm4xQS7afOaFTlgAEc_EHYOg	a3374eba-5704-45ff-8911-2b992ab5d6a3	2026-03-12 06:42:44.302	2026-03-05 06:42:44.302	f
+259	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhMzM3NGViYS01NzA0LTQ1ZmYtODkxMS0yYjk5MmFiNWQ2YTMiLCJlbWFpbCI6IktpdGlrb3JuQDEyLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzcyNjkyOTc2LCJleHAiOjE3NzMyOTc3NzZ9.vgegcIaOWeeUtR_tbSDhTG5y8YIqDBFtDF4qUPbh6ZU	a3374eba-5704-45ff-8911-2b992ab5d6a3	2026-03-12 06:42:56.746	2026-03-05 06:42:56.747	t
+260	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5Mjk5NSwiZXhwIjoxNzczMjk3Nzk1fQ.QOCgRUtwLTjnwdkMxuMxJg54P2Pu9LUHLBLD8OIgGBQ	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 06:43:15.026	2026-03-05 06:43:15.026	t
+261	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5MzUxMSwiZXhwIjoxNzczMjk4MzExfQ.ahLZo8z9cD9bhbOaLprsJqENJNlhiVsky8-8-AVCmxU	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 06:51:51.847	2026-03-05 06:51:51.847	f
+271	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcwMDE5NiwiZXhwIjoxNzczMzA0OTk2fQ.NIdr6-rq8mK_GKDUjwC9dj-DmIQ3RPIF2quhhsNHTHM	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 08:43:16.424	2026-03-05 08:43:16.424	t
+262	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5MzU0MCwiZXhwIjoxNzczMjk4MzQwfQ.s7imZTxIpNrSo8CdnqZmCXiySF7McoRT0fPhVUy_Dig	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 06:52:20.382	2026-03-05 06:52:20.383	t
+263	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5NDE3OSwiZXhwIjoxNzczMjk4OTc5fQ.QDysQM5wS5FkJUDz4qf5o7ivvZAIL9taB9trhT75Twc	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 07:02:59.435	2026-03-05 07:02:59.436	t
+265	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY5NjI1NiwiZXhwIjoxNzczMzAxMDU2fQ.-5CSP6-1P60vG7-6dDucBX2YNvD5WUDygVCvLMUUz9I	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 07:37:36.877	2026-03-05 07:37:36.877	f
+266	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjY5NzI3MiwiZXhwIjoxNzczMzAyMDcyfQ.SAaFj4JhW9yWV7Ph8j5ZHwZTdp2kzJv_p2Hk-ck3CQE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 07:54:32.501	2026-03-05 07:54:32.501	t
+267	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5NzYyMCwiZXhwIjoxNzczMzAyNDIwfQ.Far8atcMUDap17fRAQGCpAdc_xL9FxXVXksEFWb6nmY	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 08:00:20.184	2026-03-05 08:00:20.192	t
+268	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI4MjIzY2M2OC0wY2EwLTQxZGYtOTM3My1jMDhiZmYxNTY0OTEiLCJlbWFpbCI6ImFkbWluQGFkbWluLmNvbSIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc3MjY5ODUxNiwiZXhwIjoxNzczMzAzMzE2fQ.NmgBxyYYkNlkDHPu1DUj020-vOxjB5QGwvDAGVPf0Xg	8223cc68-0ca0-41df-9373-c08bff156491	2026-03-12 08:15:16.635	2026-03-05 08:15:16.635	t
+270	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2MTk4ZjAyOC03NjUzLTQ3MjItYjVmNi01ZTQ1MmRhMTk5OTAiLCJlbWFpbCI6InRlc3RAdGVzdC5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc3MjcwMDA0MCwiZXhwIjoxNzczMzA0ODQwfQ.IOLtyO5vZ6Vi2Ffr-yLjMYZa4oj5BWPapegBzXHHSjE	6198f028-7653-4722-b5f6-5e452da19990	2026-03-12 08:40:40.417	2026-03-05 08:40:40.417	t
+\.
+
+
+--
+-- TOC entry 3502 (class 0 OID 16434)
+-- Dependencies: 220
+-- Data for Name: submissions; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.submissions (id, user_id, problem_id, code, language, status, execution_time, memory_used, created_at) FROM stdin;
+c68e9603-7b6c-47cb-a66f-9fb0a715eabb	6198f028-7653-4722-b5f6-5e452da19990	0db1617c-62b8-4f51-9fd5-43f228880d4a	function solve(input) {\n  return reversed; // คืน string ตรง ๆ ให้ไปเทียบกับ expected\n}	javascript	wrong_answer	5	\N	2026-03-05 07:43:26.999
+998fd635-6ff0-4c30-ba68-1dbe0631752b	6198f028-7653-4722-b5f6-5e452da19990	\N	export function solve(input: any): any {\n  // TODO: implement\n  return input\n}\n	typescript	wrong_answer	9	\N	2026-03-03 11:23:32.95
+59508be0-77a5-4991-8323-ad3a007a5c36	6198f028-7653-4722-b5f6-5e452da19990	\N	def solve(input):\n    # TODO: implement\n    return input\n	python	pending	\N	\N	2026-03-03 18:32:06.519
+354efbbd-f3f5-4985-b1a5-af33991b1959	6198f028-7653-4722-b5f6-5e452da19990	74a913b7-66d1-4f14-81c2-43f1d270a1a7	function solve(input) {\n  const [nums, target] = input;   // input = [[2,7,11,15], 9]\n  const seen = new Map();         // เก็บค่า -> index\n\n  for (let i = 0; i < nums.length; i++) {\n    const complement = target - nums[i];\n    if (seen.has(complement)) {\n      return [seen.get(complement), i]; // เจอคู่ที่บวกกันได้ target\n    }\n    seen.set(nums[i], i);\n  }\n  return []; // กรณีไม่เจอ (แต่โจทย์บอกว่ามีคำตอบเสมอ)\n}	javascript	wrong_answer	3	\N	2026-03-04 08:17:39.763
+2c222cd7-337f-4585-ae74-d890efe5288d	6198f028-7653-4722-b5f6-5e452da19990	0db1617c-62b8-4f51-9fd5-43f228880d4a	function solve(input) {\n  // input เป็น string ปกติ เช่น "hello"\n  const str = String(input);\n  const reversed = str.split('').reverse().join('');\n  return reversed; // คืน string ตรง ๆ ให้ไปเทียบกับ expected\n}	javascript	accepted	7	\N	2026-03-04 13:30:32.199
+26287654-8ed6-450b-a3ae-206e706b4c52	6198f028-7653-4722-b5f6-5e452da19990	927e5490-5ee5-4c42-a863-50da1ce6587c	function solve(input) {\n  console.log(input)\n  return input\n}\n	javascript	wrong_answer	18	\N	2026-03-04 13:47:00.476
+327ac073-2da5-4ad5-8d1c-03f8147c1c94	1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	74a913b7-66d1-4f14-81c2-43f1d270a1a7	function solve(input) {\n  input = [0,1]\n  return input\n}\n	javascript	wrong_answer	6	\N	2026-03-05 16:35:00.758
+bf6b19e4-b7e1-438d-869c-35cc3cb06d14	\N	22222222-2222-2222-2222-222222222222	function solve(input) {\n  if (input === '') return 'YES'; // empty string is balanced\n\n  const stack = [];\n  const pairs = {\n    ')': '(',\n    ']': '[',\n    '}': '{'\n  };\n\n  for (let char of input) {\n    if (char === '(' || char === '[' || char === '{') {\n      stack.push(char);\n    } else if (char === ')' || char === ']' || char === '}') {\n      if (stack.length === 0 || stack.pop() !== pairs[char]) {\n        return 'NO';\n      }\n    }\n  }\n\n  return stack.length === 0 ? 'YES' : 'NO';\n}	javascript	accepted	119	\N	2026-03-05 06:30:38.9
+d37aa6f4-5609-412b-aabb-ac452a6d8886	6198f028-7653-4722-b5f6-5e452da19990	0db1617c-62b8-4f51-9fd5-43f228880d4a	function solve(input) {\n  return reversed; // คืน string ตรง ๆ ให้ไปเทียบกับ expected\n}	javascript	wrong_answer	7	\N	2026-03-05 07:37:58.24
+a473f931-ddb0-43c2-ae93-62b3d00abc7d	6198f028-7653-4722-b5f6-5e452da19990	0db1617c-62b8-4f51-9fd5-43f228880d4a	function solve(input) {\n  // input เป็น string ปกติ เช่น "hello"\n  const str = String(input);\n  const reversed = str.split('').reverse().join('');\n  return reversed; // คืน string ตรง ๆ ให้ไปเทียบกับ expected\n}	javascript	accepted	3	\N	2026-03-05 07:38:21.902
+52093ca6-1ec5-4962-96d2-d40214e9d5b6	6198f028-7653-4722-b5f6-5e452da19990	0db1617c-62b8-4f51-9fd5-43f228880d4a	function solve(input) {\n  return reversed; // คืน string ตรง ๆ ให้ไปเทียบกับ expected\n}	javascript	wrong_answer	5	\N	2026-03-05 07:43:17.898
+c8cc7a2a-a594-4ee8-94e1-3adb454ef208	1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	74a913b7-66d1-4f14-81c2-43f1d270a1a7	function solve(input) {\n  input = [0,1,3,5,6]\n  return input\n}\n	javascript	wrong_answer	7	\N	2026-03-05 16:36:28.29
+\.
+
+
+--
+-- TOC entry 3501 (class 0 OID 16420)
+-- Dependencies: 219
+-- Data for Name: test_cases; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.test_cases (id, problem_id, input_data, expected_output, is_hidden) FROM stdin;
+9	22222222-2222-2222-2222-222222222222	()[]{}	YES	f
+10	22222222-2222-2222-2222-222222222222	(]	NO	f
+11	22222222-2222-2222-2222-222222222222	({[]})	YES	t
+12	22222222-2222-2222-2222-222222222222	((((((	NO	t
+13	33333333-3333-3333-3333-333333333333	3 3\n0 0 0\n0 1 0\n0 0 0	4	f
+14	33333333-3333-3333-3333-333333333333	2 2\n0 1\n1 0	-1	f
+15	33333333-3333-3333-3333-333333333333	1 1\n0	0	t
+16	33333333-3333-3333-3333-333333333333	4 4\n0 0 0 0\n1 1 0 1\n0 0 0 0\n0 1 1 0	6	t
+25	74a913b7-66d1-4f14-81c2-43f1d270a1a7	[2, 7, 11, 15]\n9	[0, 1]	f
+26	74a913b7-66d1-4f14-81c2-43f1d270a1a7	[3, 2, 4]\n6	[1, 2]	t
+27	74a913b7-66d1-4f14-81c2-43f1d270a1a7	[3, 3]\n6	[0, 1]	t
+28	0db1617c-62b8-4f51-9fd5-43f228880d4a	"hello"	"olleh"	f
+29	0db1617c-62b8-4f51-9fd5-43f228880d4a	"world"	"dlrow"	t
+30	2238bca4-834a-48e2-b948-1134b32d1bd9	"racecar"	true	f
+31	2238bca4-834a-48e2-b948-1134b32d1bd9	"abba"	true	t
+32	2238bca4-834a-48e2-b948-1134b32d1bd9	"abc"	false	t
+33	2238bca4-834a-48e2-b948-1134b32d1bd9	""	true	t
+34	927e5490-5ee5-4c42-a863-50da1ce6587c	[[1,2,3],[4,5,6]]	[[1,4],[2,5],[3,6]]	f
+35	927e5490-5ee5-4c42-a863-50da1ce6587c	[[1],[2],[3]]	[[1,2,3]]	t
+36	927e5490-5ee5-4c42-a863-50da1ce6587c	[]	[]	t
+37	8d307f95-8f4d-4e02-b7f1-0d52107ddf8f	[{"score":10},{"score":20},{"score":30}]	20	f
+38	8d307f95-8f4d-4e02-b7f1-0d52107ddf8f	[{"score":5}]	5	t
+39	8d307f95-8f4d-4e02-b7f1-0d52107ddf8f	[{"score":0},{"score":100}]	50	t
+40	8d307f95-8f4d-4e02-b7f1-0d52107ddf8f	[]	0	t
+45	e06b4bed-c673-4436-859e-6da3acb7d869	2	EVEN	f
+46	e06b4bed-c673-4436-859e-6da3acb7d869	5	ODD	f
+47	e06b4bed-c673-4436-859e-6da3acb7d869	0	EVEN	t
+48	e06b4bed-c673-4436-859e-6da3acb7d869	101	ODD	t
+49	0a2f0b07-237b-4205-874e-97a5186a9dae	1 2 3	3	f
+50	0a2f0b07-237b-4205-874e-97a5186a9dae	10 5 7	10	f
+51	0a2f0b07-237b-4205-874e-97a5186a9dae	9 9 3	9	t
+52	0a2f0b07-237b-4205-874e-97a5186a9dae	-1 -5 -3	-1	t
+53	09977acc-87ee-4b8e-bd8d-09e6dbe6042e	hello	2	f
+54	09977acc-87ee-4b8e-bd8d-09e6dbe6042e	programming	3	f
+55	09977acc-87ee-4b8e-bd8d-09e6dbe6042e	AEIOU	5	t
+56	09977acc-87ee-4b8e-bd8d-09e6dbe6042e	xyz	0	t
+57	9e1a42bd-5719-4f8e-ad7d-330f83ae3e0a	5	5	f
+58	9e1a42bd-5719-4f8e-ad7d-330f83ae3e0a	7	13	f
+59	9e1a42bd-5719-4f8e-ad7d-330f83ae3e0a	10	55	t
+60	9e1a42bd-5719-4f8e-ad7d-330f83ae3e0a	15	610	t
+62	e03bbc51-1431-4c37-9448-0aec9381ba95	1	hello world	t
+\.
+
+
+--
+-- TOC entry 3498 (class 0 OID 16398)
+-- Dependencies: 216
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: admin
+--
+
+COPY public.users (id, email, password_hash, role, created_at, avatar_url, full_name) FROM stdin;
+8223cc68-0ca0-41df-9373-c08bff156491	admin@admin.com	$2a$12$w2e0VzhK9eaY7OkZhxNfmOoAp93DAbhMQcF89jlcJ7rwvNd8LAht.	ADMIN	2026-03-02 20:28:29.865	\N	admin  nakub
+6198f028-7653-4722-b5f6-5e452da19990	test@test.com	$2a$12$IXGMgETu7wV6MxZ9g2bFcuUjSY0meTaOT/C1LzHPlVBYl.WUmE5Ba	USER	2026-03-01 17:25:50.393	https://tse2.mm.bing.net/th/id/OIP.o_ZkAWuG_1WTR6n9rq3WFAHaHa?rs=1&pid=ImgDetMain&o=7&rm=3	test user
+a3374eba-5704-45ff-8911-2b992ab5d6a3	Kitikorn@12.com	$2a$12$h6FgZvJjU6Icy2yERiz6fu70dO2IM4DooWzuCL/nXoqHFqkpP00OS	USER	2026-03-05 06:42:44.298	\N	Kitikorn12
+1e617ae1-70b9-4ad7-ae33-77b10ae72cdf	test1@test.com	$2a$12$cIHqFoM1KHynP7fE6HoWqeIksIU4450zmz8Q/6E.lc7MS01uIIwmO	USER	2026-03-05 16:31:41.609	data:image/webp;base64,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	Mark 
+\.
+
+
+--
+-- TOC entry 3520 (class 0 OID 0)
+-- Dependencies: 221
+-- Name: ai_feedback_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
+--
+
+SELECT pg_catalog.setval('public.ai_feedback_id_seq', 11, true);
+
+
+--
+-- TOC entry 3521 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: announcements_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
+--
+
+SELECT pg_catalog.setval('public.announcements_id_seq', 3, true);
+
+
+--
+-- TOC entry 3522 (class 0 OID 0)
+-- Dependencies: 223
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
+--
+
+SELECT pg_catalog.setval('public.refresh_tokens_id_seq', 294, true);
+
+
+--
+-- TOC entry 3523 (class 0 OID 0)
+-- Dependencies: 218
+-- Name: test_cases_id_seq; Type: SEQUENCE SET; Schema: public; Owner: admin
+--
+
+SELECT pg_catalog.setval('public.test_cases_id_seq', 62, true);
+
+
+--
+-- TOC entry 3339 (class 2606 OID 16463)
+-- Name: ai_feedback ai_feedback_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.ai_feedback
+    ADD CONSTRAINT ai_feedback_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3347 (class 2606 OID 16566)
+-- Name: announcement_reads announcement_reads_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.announcement_reads
+    ADD CONSTRAINT announcement_reads_pkey PRIMARY KEY (user_id, announcement_id);
+
+
+--
+-- TOC entry 3345 (class 2606 OID 16561)
+-- Name: announcements announcements_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.announcements
+    ADD CONSTRAINT announcements_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3333 (class 2606 OID 16418)
+-- Name: problems problems_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.problems
+    ADD CONSTRAINT problems_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3342 (class 2606 OID 16508)
+-- Name: refresh_tokens refresh_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3337 (class 2606 OID 16443)
+-- Name: submissions submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3335 (class 2606 OID 16428)
+-- Name: test_cases test_cases_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.test_cases
+    ADD CONSTRAINT test_cases_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3329 (class 2606 OID 16409)
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- TOC entry 3331 (class 2606 OID 16407)
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3340 (class 1259 OID 16510)
+-- Name: ai_feedback_submission_id_key; Type: INDEX; Schema: public; Owner: admin
+--
+
+CREATE UNIQUE INDEX ai_feedback_submission_id_key ON public.ai_feedback USING btree (submission_id);
+
+
+--
+-- TOC entry 3343 (class 1259 OID 16509)
+-- Name: refresh_tokens_token_key; Type: INDEX; Schema: public; Owner: admin
+--
+
+CREATE UNIQUE INDEX refresh_tokens_token_key ON public.refresh_tokens USING btree (token);
+
+
+--
+-- TOC entry 3351 (class 2606 OID 16531)
+-- Name: ai_feedback ai_feedback_submission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.ai_feedback
+    ADD CONSTRAINT ai_feedback_submission_id_fkey FOREIGN KEY (submission_id) REFERENCES public.submissions(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3353 (class 2606 OID 16572)
+-- Name: announcement_reads announcement_reads_announcement_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.announcement_reads
+    ADD CONSTRAINT announcement_reads_announcement_id_fkey FOREIGN KEY (announcement_id) REFERENCES public.announcements(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3354 (class 2606 OID 16567)
+-- Name: announcement_reads announcement_reads_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.announcement_reads
+    ADD CONSTRAINT announcement_reads_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3352 (class 2606 OID 16511)
+-- Name: refresh_tokens refresh_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.refresh_tokens
+    ADD CONSTRAINT refresh_tokens_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3349 (class 2606 OID 16526)
+-- Name: submissions submissions_problem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_problem_id_fkey FOREIGN KEY (problem_id) REFERENCES public.problems(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- TOC entry 3350 (class 2606 OID 16521)
+-- Name: submissions submissions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.submissions
+    ADD CONSTRAINT submissions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- TOC entry 3348 (class 2606 OID 16516)
+-- Name: test_cases test_cases_problem_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: admin
+--
+
+ALTER TABLE ONLY public.test_cases
+    ADD CONSTRAINT test_cases_problem_id_fkey FOREIGN KEY (problem_id) REFERENCES public.problems(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+-- Completed on 2026-03-05 16:49:45 UTC
+
+--
+-- PostgreSQL database dump complete
+--
+
+\unrestrict fG3FKJHAfEeNhk1seb05KERCRHnKzd8jl4jsiOY0tpwpZff63WmTzEud0NCBoPr
+
