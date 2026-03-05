@@ -1,15 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { AiInsight } from '../../types'
 import D3BarChart from '../../components/ui/D3BarChart'
 import { useAuthStore } from '../../store/authStore'
 import { adminApi, type AdminAiFeedbackItem } from '../../services/adminApi'
 import toast from 'react-hot-toast'
-
-const STATIC_INSIGHTS: AiInsight[] = [
-  { id: 1, icon: 'priority_high', bgColor: 'bg-red-50', iconColor: 'text-red-600', title: 'Nested loops in large inputs', description: 'Detected potential O(N^2) patterns in multiple problems', badge: 'Performance risk', badgeColor: 'bg-red-100 text-red-700' },
-  { id: 2, icon: 'lightbulb', bgColor: 'bg-blue-50', iconColor: 'text-[#5586e7]', title: 'Missing edge case checks', description: 'Null/empty inputs often not handled in beginner submissions', badge: 'Common pattern', badgeColor: 'bg-blue-100 text-blue-700' },
-  { id: 3, icon: 'psychology', bgColor: 'bg-green-50', iconColor: 'text-green-600', title: 'Good use of Set/Map', description: 'High correlation between data-structure usage and better scores', badge: 'Positive signal', badgeColor: 'bg-green-100 text-green-700' },
-]
 
 export default function AdminAiInsightsPage() {
   const { accessToken } = useAuthStore()
@@ -24,7 +17,7 @@ export default function AdminAiInsightsPage() {
         const { feedback } = await adminApi.listAiFeedback(accessToken)
         setItems(feedback)
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to load AI feedback'
+        const message = error instanceof Error ? error.message : 'โหลดข้อมูล AI feedback ไม่สำเร็จ'
         toast.error(message)
       } finally {
         setLoading(false)
@@ -78,7 +71,7 @@ export default function AdminAiInsightsPage() {
             <p className="text-xl md:text-2xl font-bold text-slate-50">
               {avgScore.toFixed(1)}
             </p>
-            <p className="text-[11px] text-emerald-400">mock trend</p>
+            <p className="text-[11px] text-slate-400">จากข้อมูลจริง</p>
           </div>
         </div>
         <div className="card bg-slate-900/70 border border-slate-800">
@@ -105,46 +98,45 @@ export default function AdminAiInsightsPage() {
         </div>
       </div>
 
-      {/* Chart + insights */}
+      <p className="text-xs text-slate-400">
+        วิเคราะห์จาก: ระบบ rule-based (เมื่อเปิดใช้ OpenRouter จะเรียก LLM และอาจแสดง model name)
+      </p>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 card bg-slate-900/70 border border-slate-800">
           <div className="card-body space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="card-title text-base text-slate-100">
-                Quality score distribution
-              </h2>
+              <h2 className="card-title text-base text-slate-100">Quality score distribution</h2>
               <span className="badge badge-outline badge-sm text-slate-300">
-                {loading ? 'Loading...' : 'Last 50 feedback'}
+                {loading ? 'Loading...' : 'ข้อมูลจริง'}
               </span>
             </div>
-            <D3BarChart data={scoreBuckets} max={Math.max(5, Math.max(...scoreBuckets.map((b) => b.value)))} />
+            <D3BarChart data={scoreBuckets} max={Math.max(5, ...scoreBuckets.map((b) => b.value))} />
           </div>
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-slate-100">Insight feed</h2>
-            <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-4">
-            {(items.length ? STATIC_INSIGHTS : STATIC_INSIGHTS).map((insight) => (
-              <div
-                key={insight.id}
-                className="flex items-start gap-3 pb-3 border-b border-slate-800 last:border-0 last:pb-0"
-              >
-                <div className={`p-2 ${insight.bgColor} rounded-lg shrink-0`}>
-                  <span className={`material-symbols-outlined ${insight.iconColor} text-sm`}>
-                    {insight.icon}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-100">{insight.title}</p>
-                  <p className="text-[11px] text-slate-400 mt-1">{insight.description}</p>
-                  <span
-                    className={`mt-2 inline-block text-[10px] px-2 py-0.5 rounded-full font-medium ${insight.badgeColor}`}
-                  >
-                    {insight.badge}
-                  </span>
-                </div>
+          <h2 className="text-base font-semibold text-slate-100">Recent AI feedback</h2>
+          <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-4">
+            {loading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => <div key={i} className="skeleton h-16 w-full" />)}
               </div>
-            ))}
+            ) : items.length === 0 ? (
+              <p className="text-sm text-slate-500">ยังไม่มี feedback</p>
+            ) : (
+              items.slice(0, 5).map((f) => (
+                <div key={f.id} className="pb-3 border-b border-slate-800 last:border-0 last:pb-0">
+                  <p className="text-xs font-bold text-slate-100">{f.problemTitle ?? '—'}</p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Score {f.qualityScore ?? '—'}/100 · {f.status} · {f.language ?? '—'}
+                  </p>
+                  {f.analysisText && (
+                    <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">{f.analysisText}</p>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>

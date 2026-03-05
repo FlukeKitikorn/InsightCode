@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import type { Page } from './types'
 import { useAuthStore } from './store/authStore'
 import { authApi } from './services/authApi'
+import toast from 'react-hot-toast'
 import AuthPage from './pages/AuthPage'
 import ProblemExplorerPage from './pages/ProblemExplorerPage'
 import ProblemWorkspacePage from './pages/ProblemWorkspacePage'
@@ -11,6 +12,8 @@ import { useLoading } from './contexts/LoadingContext'
 import UserProfilePage from './pages/UserProfilePage'
 import AdminLoginPage from './pages/admin/AdminLoginPage'
 import AdminPage from './pages/admin/AdminPage'
+import ApiDocsPage from './pages/ApiDocsPage'
+import SystemDiagramsPage from './pages/SystemDiagramsPage'
 
 export default function App() {
   const navigate = useNavigate()
@@ -23,6 +26,13 @@ export default function App() {
   // แต่ refreshToken ยังอยู่ใน HttpOnly Cookie → ขอใหม่โดยอัตโนมัติ
   useEffect(() => {
     const tryRefresh = async () => {
+      const path = window.location.pathname
+      const isPublic = path.startsWith('/api/docs') || path.startsWith('/system/diagrams')
+      if (isPublic) {
+        // สำหรับหน้า public docs/diagrams ให้ข้ามการ refresh และ login flow ทั้งหมด
+        setLoading(false)
+        return
+      }
       try {
         const { accessToken } = await authApi.refresh()
         const { user } = await authApi.getMe(accessToken)
@@ -40,6 +50,21 @@ export default function App() {
     tryRefresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // ─── Global handler: Invalid or expired access token ───────────
+  useEffect(() => {
+    const handler = () => {
+      const path = window.location.pathname
+      if (path.startsWith('/api/docs') || path.startsWith('/system/diagrams')) {
+        return
+      }
+      clearAuth()
+      toast.error('Session หมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่')
+      navigate('/', { replace: true })
+    }
+    window.addEventListener('insightcode:auth-expired', handler)
+    return () => window.removeEventListener('insightcode:auth-expired', handler)
+  }, [clearAuth, navigate])
 
   const handleNavigate = (page: Page) => {
     const map: Record<Page, string> = {
@@ -143,6 +168,12 @@ export default function App() {
           </RequireAdmin>
         }
       />
+
+      {/* API docs (no auth guard for now) */}
+      <Route path="/api/docs" element={<ApiDocsPage />} />
+
+      {/* System diagrams (public, read-only) */}
+      <Route path="/system/diagrams" element={<SystemDiagramsPage />} />
 
       {/* fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

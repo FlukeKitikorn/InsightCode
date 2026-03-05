@@ -28,7 +28,7 @@ export default function AdminLayout() {
           <button
             type="button"
             onClick={() => navigate('/admin')}
-            className="flex items-center gap-2 text-[#5586e7] hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 text-[#5586e7] hover:opacity-80 transition-opacity cursor-pointer"
           >
             <span className="material-symbols-outlined text-2xl">admin_panel_settings</span>
             <span className="font-bold text-sm md:text-base tracking-tight">InsightCode Admin</span>
@@ -78,7 +78,7 @@ export default function AdminLayout() {
                 key={item.path}
                 type="button"
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left cursor-pointer ${
                   isActive(item.path)
                     ? 'bg-[#5586e7] text-white shadow-sm'
                     : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'

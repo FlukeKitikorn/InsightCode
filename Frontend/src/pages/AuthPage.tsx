@@ -29,15 +29,18 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
         try {
             if (mode === 'login') {
                 await login({ email, password })
-                toast.success('Signed in successfully')
+                toast.success('เข้าสู่ระบบสำเร็จ')
+                // login สำเร็จ → redirect เข้า content
+                setLoading(true)
+                setTimeout(() => setLoading(false), 600)
+                onNavigate('problems')
             } else {
                 await register({ email, password, fullName })
-                toast.success('Account created')
+                toast.success('สร้างบัญชีผู้ใช้สำเร็จ กรุณาเข้าสู่ระบบ')
+                // สมัครสำเร็จ → กลับไปแท็บ login และให้ผู้ใช้ล็อกอินเอง
+                setMode('login')
+                setPassword('')
             }
-            // สำเร็จ → แสดง skeleton ชั่วครู่แล้วไปหน้า problems
-            setLoading(true)
-            setTimeout(() => setLoading(false), 600)
-            onNavigate('problems')
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Something went wrong'
             setError(message)
@@ -76,22 +79,23 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                     <div className="hidden md:flex flex-col gap-6">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5586e7]/10 text-[#5586e7] text-xs font-bold uppercase tracking-wider w-fit">
                             <span className="material-symbols-outlined text-sm">auto_awesome</span>
-                            Next-Gen Code Intelligence
+                            Practice · Judge · AI Insights
                         </div>
                         <h1 className="text-5xl font-bold leading-[1.1] tracking-tight dark:text-white">
-                            Analyze. Optimize.{' '}
-                            <span className="text-[#5586e7]">Secure.</span>
+                            Level up your{' '}
+                            <span className="text-[#5586e7]">coding skills.</span>
                         </h1>
                         <p className="text-[#506795] dark:text-gray-400 text-lg max-w-md leading-relaxed">
-                            The intelligent code analysis platform for modern developers. Deploy cleaner, safer code with AI-driven insights.
+                            InsightCode คือแพลตฟอร์มฝึกเขียนโค้ดที่มีระบบตรวจโจทย์อัตโนมัติ
+                            บันทึกประวัติการทำโจทย์ และให้ AI วิเคราะห์คุณภาพโค้ดเพื่อช่วยให้คุณพัฒนาได้เร็วขึ้น.
                         </p>
 
                         {/* Feature List */}
                         <div className="flex flex-col gap-4 mt-4">
                             {[
-                                'Real-time vulnerability scanning',
-                                'Automated PR reviews',
-                                'Seamless CI/CD integration',
+                                'Run & Submit โค้ดกับ test cases จริง พร้อมแสดง Expected vs Actual',
+                                'ระบบ Judge และสรุปผลโจทย์ที่ทำได้ แยกตามระดับความยาก',
+                                'AI feedback ให้คะแนนและวิเคราะห์จุดแข็ง/จุดปรับปรุงของโค้ด',
                             ].map((feature) => (
                                 <div key={feature} className="flex items-center gap-3">
                                     <span className="material-symbols-outlined text-[#5586e7]">check_circle</span>
@@ -206,7 +210,9 @@ export default function AuthPage({ onNavigate }: AuthPageProps) {
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
                                             minLength={8}
+                                            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                                         />
+                                        
                                         <button
                                             className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#5586e7] transition-colors cursor-pointer text-xl"
                                             type="button"

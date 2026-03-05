@@ -23,10 +23,11 @@ export function useAuth() {
 
     // ─── Register ───────────────────────────────────────────────
     const register = useCallback(async (payload: RegisterPayload) => {
+        // สมัครสมาชิกสำเร็จแล้ว แต่ยังไม่ถือว่า "ล็อกอิน"
+        // ให้ผู้ใช้กลับไปหน้า login และเข้าสู่ระบบเอง
         const data = await authApi.register(payload)
-        setAuth(data.user, data.accessToken)
         return data
-    }, [setAuth])
+    }, [])
 
     // ─── Logout ──────────────────────────────────────────────────
     const logout = useCallback(async () => {

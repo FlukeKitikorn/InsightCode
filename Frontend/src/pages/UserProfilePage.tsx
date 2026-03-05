@@ -32,9 +32,9 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
       })
 
     toast.promise(promise, {
-      loading: 'Saving profile...',
-      success: 'Profile updated successfully',
-      error: (err) => err?.message || 'Failed to update profile',
+      loading: 'กำลังบันทึกโปรไฟล์...',
+      success: 'บันทึกโปรไฟล์สำเร็จ',
+      error: (err) => err?.message || 'บันทึกโปรไฟล์ไม่สำเร็จ',
     })
       .finally(() => setIsSaving(false))
   }
@@ -112,7 +112,7 @@ export default function UserProfilePage({ onNavigate }: UserProfilePageProps) {
                 onClick={() => {
                   setFullName(user.fullName ?? '')
                   setAvatarUrl(user.avatarUrl ?? '')
-                  toast('Reverted changes', { icon: '↩️' })
+                  toast('ยกเลิกการแก้ไขแล้ว', { icon: '↩️' })
                 }}
                 className="px-4 py-2 text-xs md:text-sm font-bold rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               >

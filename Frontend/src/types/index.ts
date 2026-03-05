@@ -60,7 +60,7 @@ export interface FunctionTime {
 }
 
 // ─── Admin ───────────────────────────────────────────────────
-export type UserRole = 'Developer' | 'Admin' | 'Lead Dev'
+export type UserRole = 'User' | 'Admin' 
 export type UserStatus = 'Active' | 'Suspended'
 
 export interface AdminUser {

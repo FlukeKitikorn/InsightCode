@@ -48,6 +48,29 @@ export interface UserProgress {
     solvedByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
     attemptedByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
     masteryByDifficulty: { EASY: number; MEDIUM: number; HARD: number }
+  solvedProblemIds: string[]
+  attemptedProblemIds: string[]
+}
+
+export interface InsightItem {
+    id: string
+    problemTitle: string | null
+    difficulty: string | null
+    language: string | null
+    status: string
+    executionTime: number | null
+    createdAt: string
+    qualityScore: number | null
+    analysisText: string | null
+}
+
+export interface InsightsResponse {
+    insights: InsightItem[]
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+    hasMore: boolean
 }
 
 // ─── API Base ─────────────────────────────────────────────────
@@ -69,7 +92,11 @@ async function request<T>(
     const data = await res.json()
 
     if (!res.ok) {
-        throw new Error(data.message || 'Something went wrong')
+        const message = data.message || 'Something went wrong'
+        if (res.status === 401 && message === 'Invalid or expired access token') {
+            window.dispatchEvent(new CustomEvent('insightcode:auth-expired'))
+        }
+        throw new Error(message)
     }
 
     return data as T
@@ -119,6 +146,11 @@ export const authApi = {
 
     getProgress: (accessToken: string) =>
         request<{ progress: UserProgress }>('/users/me/progress', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+
+    getMyInsights: (accessToken: string, page = 1, pageSize = 10) =>
+        request<InsightsResponse>(`/users/me/insights?page=${page}&pageSize=${pageSize}`, {
             headers: { Authorization: `Bearer ${accessToken}` },
         }),
 }

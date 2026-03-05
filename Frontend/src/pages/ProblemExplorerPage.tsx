@@ -30,13 +30,6 @@ const STATUS_ICON: Record<ProblemStatus, { icon: string; color: string }> = {
     unsolved: { icon: 'circle', color: 'text-slate-300' },
 }
 
-const AI_BADGE_STYLE: Record<string, string> = {
-    interview: 'bg-purple-100 text-purple-600',
-    top: 'bg-blue-100 text-[#5586e7]',
-    weak: 'bg-amber-50 text-amber-700',
-    none: 'bg-slate-100 text-slate-400',
-}
-
 interface ProblemExplorerPageProps {
     onNavigate: (page: Page) => void
 }
@@ -60,10 +53,11 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
     }
 
     useEffect(() => {
+        if (!accessToken) return
         const load = async () => {
             setIsLoading(true)
             try {
-                const { problems: apiProblems } = await problemsApi.list()
+                const { problems: apiProblems } = await problemsApi.list(accessToken)
                 if (apiProblems.length === 0) {
                     // ถ้า backend ยังไม่มีโจทย์เลย ใช้ mock ต่อไป
                     return
@@ -74,20 +68,20 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                     difficulty: toUiDifficulty(p.difficulty),
                     status: 'unsolved',
                     tags: [],
-                    acceptance: undefined,
+                    acceptance: p.acceptance ?? undefined,
                     aiRecommend: undefined,
                     aiRecommendType: 'none',
                 }))
                 setProblems(mapped)
             } catch (error) {
-                const message = error instanceof Error ? error.message : 'Failed to load problems'
+                const message = error instanceof Error ? error.message : 'โหลดรายการโจทย์ไม่สำเร็จ'
                 toast.error(message)
             } finally {
                 setIsLoading(false)
             }
         }
         void load()
-    }, [])
+    }, [accessToken])
 
     useEffect(() => {
         if (!accessToken) return
@@ -95,8 +89,21 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
             try {
                 const { progress: p } = await authApi.getProgress(accessToken)
                 setProgress(p)
+                setProblems((prev) => {
+                    const solved = new Set(p.solvedProblemIds ?? [])
+                    const attempted = new Set(p.attemptedProblemIds ?? [])
+                    return prev.map((problem) => {
+                        let status: ProblemStatus = 'unsolved'
+                        if (solved.has(problem.id)) {
+                            status = 'solved'
+                        } else if (attempted.has(problem.id)) {
+                            status = 'attempted'
+                        }
+                        return { ...problem, status }
+                    })
+                })
             } catch (error) {
-                const message = error instanceof Error ? error.message : 'Failed to load progress'
+                const message = error instanceof Error ? error.message : 'โหลดข้อมูลความคืบหน้าไม่สำเร็จ'
                 toast.error(message)
             }
         }
@@ -113,7 +120,7 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
         return diffOk && statOk
     })
 
-    const pageSize = 10
+    const pageSize = 5
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
     const paged = useMemo(() => {
         const safePage = Math.min(Math.max(currentPage, 1), totalPages)
@@ -155,15 +162,15 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                                 if (dailyProblem?.id != null) {
                                                     goWorkspace(dailyProblem.id)
                                                 } else {
-                                                    toast.error('No problem available yet')
+                                                    toast.error('ยังไม่มีโจทย์ให้ทำในตอนนี้')
                                                 }
                                             }}
-                                            className="bg-white text-[#5586e7] px-6 py-2.5 rounded-lg font-bold hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm"
+                                            className="bg-white text-[#5586e7] px-6 py-2.5 rounded-lg font-bold hover:bg-slate-50 transition-colors flex items-center gap-2 text-sm cursor-pointer"
                                         >
                                             <span className="material-symbols-outlined text-xl">play_arrow</span>
                                             Solve Now
                                         </button>
-                                        <button className="bg-white/20 backdrop-blur-sm text-white border border-white/30 px-6 py-2.5 rounded-lg font-bold hover:bg-white/30 transition-colors text-sm">
+                                        <button className="bg-white/20 backdrop-blur-sm text-white border border-white/30 px-6 py-2.5 rounded-lg font-bold hover:bg-white/30 transition-colors text-sm cursor-pointer">
                                             View Details
                                         </button>
                                     </div>
@@ -205,7 +212,7 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                 </div>
                                 <button
                                     onClick={() => { setDifficultyFilter('all'); setStatusFilter('all') }}
-                                    className="flex items-center gap-1 px-3 py-2 text-sm text-slate-400 hover:text-[#5586e7] hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                                    className="flex items-center gap-1 px-3 py-2 text-sm text-slate-400 hover:text-[#5586e7] hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                                 >
                                     <span className="material-symbols-outlined text-lg">restart_alt</span>
                                     Reset
@@ -219,7 +226,6 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                         <tr className="text-slate-400 font-bold border-b border-slate-100 dark:border-slate-800 text-xs uppercase tracking-wider">
                                             <th className="text-left px-4 md:px-6 py-3">Status</th>
                                             <th className="text-left px-4 md:px-6 py-3">Title</th>
-                                            <th className="text-left px-4 md:px-6 py-3 hidden sm:table-cell">AI Recommend</th>
                                             <th className="text-left px-4 md:px-6 py-3">Difficulty</th>
                                             <th className="text-left px-4 md:px-6 py-3 hidden md:table-cell">Acceptance</th>
                                         </tr>
@@ -227,14 +233,14 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                     <tbody>
                                         {isLoading ? (
                                             <tr>
-                                                <td colSpan={5} className="px-4 md:px-6 py-10 text-center text-sm text-slate-400">
+                                                <td colSpan={4} className="px-4 md:px-6 py-10 text-center text-sm text-slate-400">
                                                     กำลังโหลดโจทย์จากเซิร์ฟเวอร์...
                                                 </td>
                                             </tr>
                                         ) : filtered.length === 0 ? (
                                             <tr>
                                                 <td
-                                                    colSpan={5}
+                                                    colSpan={4}
                                                     className="px-4 md:px-6 py-10 text-center text-sm text-slate-400"
                                                 >
                                                     ไม่มีโจทย์ที่จะแสดงในตอนนี้
@@ -243,7 +249,6 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                         ) : (
                                             paged.map((problem) => {
                                                 const { icon, color } = STATUS_ICON[problem.status]
-                                                const aiStyle = AI_BADGE_STYLE[problem.aiRecommendType ?? 'none']
                                                 return (
                                                     <tr
                                                         key={problem.id}
@@ -266,11 +271,6 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                                                     ))}
                                                                 </div>
                                                             </div>
-                                                        </td>
-                                                        <td className="px-4 md:px-6 py-4 hidden sm:table-cell">
-                                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${aiStyle}`}>
-                                                                {problem.aiRecommend ?? '—'}
-                                                            </span>
                                                         </td>
                                                         <td className="px-4 md:px-6 py-4">
                                                             <Badge variant="difficulty" difficulty={problem.difficulty} />
@@ -302,7 +302,7 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                             onClick={() => setCurrentPage(p)}
                                             className={`w-9 h-9 text-sm rounded-lg border font-medium transition-colors ${p === currentPage
                                                 ? 'bg-[#5586e7] border-[#5586e7] text-white'
-                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-[#5586e7]'
+                                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-[#5586e7] cursor-pointer'
                                                 }`}
                                         >
                                             {p}
@@ -310,7 +310,7 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                     ))}
                                     <button
                                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                        className="w-9 h-9 text-sm rounded-lg border font-medium transition-colors bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-[#5586e7]"
+                                        className="w-9 h-9 text-sm rounded-lg border font-medium transition-colors bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:text-[#5586e7] cursor-pointer"
                                         disabled={currentPage >= totalPages}
                                     >
                                         »
@@ -404,7 +404,6 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                     <span className="material-symbols-outlined text-[#5586e7]">event</span>
                                     Contests
                                 </span>
-                                <a href="#" className="text-xs text-[#5586e7] font-bold hover:underline">View All</a>
                             </h3>
                             <div className="space-y-4">
                                 {[
@@ -413,7 +412,7 @@ export default function ProblemExplorerPage({ onNavigate }: ProblemExplorerPageP
                                 ].map((contest) => (
                                     <div
                                         key={contest.title}
-                                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                        className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                                     >
                                         <div className={`w-12 h-12 rounded-lg ${contest.bg} flex flex-col items-center justify-center ${contest.textColor}`}>
                                             <span className="text-xs font-bold">{contest.month}</span>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import type { Page } from '../../types'
 import Navbar from './Navbar'
 import Footer from './Footer'
+import ChatBubble from '../chat/ChatBubble'
 import { useLoading } from '../../contexts/LoadingContext'
 
 interface PageLayoutProps {
@@ -96,18 +97,21 @@ export default function PageLayout({
             {/* Navbar */}
             <Navbar currentPage={currentPage} onNavigate={onNavigate} />
 
-            {/* Page Content */}
-            <div className={`flex-1 flex flex-col ${fullScreen ? 'overflow-hidden' : ''}`}>
+            {/* Page Content — fullScreen ต้องมี min-h-0 เพื่อให้ workspace รับความสูงจาก viewport ได้ */}
+            <div className={`flex-1 flex flex-col min-h-0 ${fullScreen ? 'overflow-hidden' : ''}`}>
                 {loading ? (
                   <GlobalSkeleton fullScreen={fullScreen} />
                 ) : (
-                  <div className="fade-in-soft flex-1 flex flex-col">
+                  <div className="fade-in-soft flex-1 flex flex-col min-h-0 overflow-hidden">
                     {children}
                   </div>
                 )}
             </div>
 
             {!fullScreen && <Footer />}
+
+            {/* AI Chat bubble — เปิด/ปิดด้วย DaisyUI toggle */}
+            <ChatBubble />
         </div>
     )
 }

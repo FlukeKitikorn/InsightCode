@@ -17,9 +17,9 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
   useEffect(() => {
     if (!ref.current || data.length === 0) return
 
-    const width = 260
-    const height = 120
-    const margin = { top: 8, right: 8, bottom: 18, left: 40 }
+    const width = 480
+    const height = 220
+    const margin = { top: 12, right: 16, bottom: 26, left: 48 }
 
     const svg = d3.select(ref.current)
     svg.selectAll('*').remove()
@@ -48,7 +48,7 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
       .call(d3.axisLeft(y).tickSize(0))
       .selectAll('text')
       .attr('fill', '#64748b')
-      .attr('font-size', 10)
+      .attr('font-size', 12)
       .attr('font-weight', 600)
 
     g.append('g')
@@ -64,7 +64,7 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
       )
       .selectAll('text')
       .attr('fill', '#94a3b8')
-      .attr('font-size', 9)
+      .attr('font-size', 11)
 
     g.selectAll('.bar-bg')
       .data(data)
@@ -98,7 +98,7 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
       .attr('x', (d: D3BarChartDatum) => x(d.value) + 4)
       .attr('y', (d: D3BarChartDatum) => (y(d.label) ?? 0) + y.bandwidth() / 2 + 3)
       .attr('fill', '#64748b')
-      .attr('font-size', 9)
+      .attr('font-size', 11)
       .attr('font-weight', 600)
       .text((d: D3BarChartDatum) => `${d.value}%`)
   }, [data, max])
@@ -106,8 +106,8 @@ export default function D3BarChart({ data, max }: D3BarChartProps) {
   return (
     <svg
       ref={ref}
-      viewBox="0 0 260 120"
-      className="w-full h-[120px]"
+      viewBox="0 0 480 220"
+      className="w-full h-[220px]"
       role="img"
       aria-label="Mastery chart"
     />

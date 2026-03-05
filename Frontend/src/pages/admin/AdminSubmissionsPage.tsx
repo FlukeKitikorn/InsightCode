@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useAuthStore } from '../../store/authStore'
 import { adminApi, type AdminSubmissionItem } from '../../services/adminApi'
 import toast from 'react-hot-toast'
+
+const PAGE_SIZE = 15
 
 export default function AdminSubmissionsPage() {
   const { accessToken } = useAuthStore()
   const [submissions, setSubmissions] = useState<AdminSubmissionItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [userSearch, setUserSearch] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
     if (!accessToken) return
     const load = async () => {
       try {
         setLoading(true)
-        const { submissions: apiSubs } = await adminApi.listSubmissions(accessToken, 200)
+        const { submissions: apiSubs } = await adminApi.listSubmissions(accessToken, 500)
         setSubmissions(apiSubs)
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to load submissions'
@@ -24,69 +29,86 @@ export default function AdminSubmissionsPage() {
     }
     void load()
   }, [accessToken])
+
+  const statuses = useMemo(() => {
+    const set = new Set(submissions.map((s) => s.status))
+    return Array.from(set).sort()
+  }, [submissions])
+
+  const filtered = useMemo(() => {
+    return submissions.filter((s) => {
+      const matchStatus = statusFilter === 'all' || s.status === statusFilter
+      const q = userSearch.toLowerCase().trim()
+      const matchUser = !q || (s.userEmail ?? '').toLowerCase().includes(q)
+      return matchStatus && matchUser
+    })
+  }, [submissions, statusFilter, userSearch])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paged = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return filtered.slice(start, start + PAGE_SIZE)
+  }, [filtered, currentPage])
+
+  const acceptedCount = useMemo(() => submissions.filter((s) => s.status === 'accepted').length, [submissions])
+  const avgExec = useMemo(() => {
+    const withTime = submissions.filter((s) => s.executionTime != null) as { executionTime: number }[]
+    if (!withTime.length) return 0
+    return Math.round(withTime.reduce((a, s) => a + s.executionTime, 0) / withTime.length)
+  }, [submissions])
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-bold text-slate-100">Submissions</h1>
         <p className="text-sm text-slate-400">
-          Monitor submission trends and review recent submissions across the platform.
+          ข้อมูลจริงจากระบบ กรองตามสถานะและดูรายบุคคล (ใครส่งอะไรมา)
         </p>
       </header>
 
-      {/* Metrics row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <div className="stat bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2">
-          <div className="stat-title text-[11px] text-slate-400">Today submissions</div>
-          <div className="stat-value text-lg md:text-2xl text-slate-50">1,284</div>
-          <div className="stat-desc text-[11px] text-emerald-400">+8% vs yesterday</div>
+          <div className="stat-title text-[11px] text-slate-400">Total</div>
+          <div className="stat-value text-lg md:text-2xl text-slate-50">{submissions.length}</div>
         </div>
         <div className="stat bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2">
-          <div className="stat-title text-[11px] text-slate-400">Acceptance rate</div>
-          <div className="stat-value text-lg md:text-2xl text-slate-50">42%</div>
-          <div className="stat-desc text-[11px] text-slate-400">Last 7 days</div>
+          <div className="stat-title text-[11px] text-slate-400">Accepted</div>
+          <div className="stat-value text-lg md:text-2xl text-slate-50">{acceptedCount}</div>
+          <div className="stat-desc text-[11px] text-slate-400">
+            {submissions.length ? `${Math.round((acceptedCount / submissions.length) * 100)}%` : '—'}
+          </div>
         </div>
         <div className="stat bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2">
           <div className="stat-title text-[11px] text-slate-400">Avg exec time</div>
-          <div className="stat-value text-lg md:text-2xl text-slate-50">68ms</div>
-          <div className="stat-desc text-[11px] text-slate-400">All languages</div>
+          <div className="stat-value text-lg md:text-2xl text-slate-50">{avgExec}ms</div>
         </div>
         <div className="stat bg-slate-900/70 border border-slate-800 rounded-xl px-4 py-2">
-          <div className="stat-title text-[11px] text-slate-400">AI analyzed</div>
-          <div className="stat-value text-lg md:text-2xl text-slate-50">78%</div>
-          <div className="stat-desc text-[11px] text-slate-400">with AiFeedback</div>
+          <div className="stat-title text-[11px] text-slate-400">Statuses</div>
+          <div className="stat-value text-lg md:text-2xl text-slate-50">{statuses.length}</div>
+          <div className="stat-desc text-[11px] text-slate-400">{statuses.join(', ') || '—'}</div>
         </div>
       </div>
 
-      {/* Filters */}
       <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">
-            search
-          </span>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg">search</span>
           <input
-            placeholder="Search by user or problem..."
+            value={userSearch}
+            onChange={(e) => { setUserSearch(e.target.value); setCurrentPage(1) }}
+            placeholder="Filter by user email..."
             className="w-full pl-10 pr-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-sm outline-none focus:ring-2 focus:ring-[#5586e7]/40"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
-          <select className="select select-sm bg-slate-950 border-slate-700 text-xs">
-            <option>Status: All</option>
-            <option>Accepted</option>
-            <option>Wrong answer</option>
-            <option>Pending</option>
-          </select>
-          <select className="select select-sm bg-slate-950 border-slate-700 text-xs">
-            <option>Language: All</option>
-            <option>TypeScript</option>
-            <option>JavaScript</option>
-            <option>Python</option>
-          </select>
-          <select className="select select-sm bg-slate-950 border-slate-700 text-xs">
-            <option>Range: 24h</option>
-            <option>7 days</option>
-            <option>30 days</option>
-          </select>
-        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1) }}
+          className="select select-sm bg-slate-950 border-slate-700 text-xs"
+        >
+          <option value="all">Status: All</option>
+          {statuses.map((st) => (
+            <option key={st} value={st}>{st}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
@@ -116,7 +138,7 @@ export default function AdminSubmissionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {submissions.map((s) => (
+                {paged.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-800/70 transition-colors">
                     <td className="px-4 md:px-6 py-3 text-xs md:text-sm text-slate-100">
                       {s.userEmail ?? '—'}
@@ -148,13 +170,10 @@ export default function AdminSubmissionsPage() {
                     </td>
                   </tr>
                 ))}
-                {submissions.length === 0 && !loading && (
+                {paged.length === 0 && !loading && (
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 md:px-6 py-6 text-center text-sm text-slate-500"
-                    >
-                      No submissions yet.
+                    <td colSpan={6} className="px-4 md:px-6 py-6 text-center text-sm text-slate-500">
+                      No submissions match filters.
                     </td>
                   </tr>
                 )}
@@ -162,6 +181,19 @@ export default function AdminSubmissionsPage() {
             </table>
           )}
         </div>
+        {!loading && totalPages > 1 && (
+          <div className="bg-slate-900 px-4 py-3 border-t border-slate-800 flex justify-between items-center">
+            <p className="text-[11px] text-slate-400">หน้า {currentPage} / {totalPages} · รวม {filtered.length} รายการ</p>
+            <div className="flex gap-1">
+              <button type="button" disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => p - 1)} className="btn btn-ghost btn-xs">
+                <span className="material-symbols-outlined text-sm">chevron_left</span>
+              </button>
+              <button type="button" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="btn btn-ghost btn-xs">
+                <span className="material-symbols-outlined text-sm">chevron_right</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

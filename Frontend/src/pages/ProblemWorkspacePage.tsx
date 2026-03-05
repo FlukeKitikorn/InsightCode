@@ -79,6 +79,7 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
     java: STARTER_CODE.java,
     go: STARTER_CODE.go,
   }))
+  const [showProblemDrawer, setShowProblemDrawer] = useState(false)
 
   useEffect(() => {
     if (!problemId) {
@@ -108,8 +109,27 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
       setSubmissions(list)
       if (!selectedSubmissionId && list.length > 0) setSelectedSubmissionId(list[0].id)
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to load submissions'
+      const message = e instanceof Error ? e.message : 'โหลดประวัติการส่งโค้ดไม่สำเร็จ'
       toast.error(message)
+    }
+  }
+
+  const pollAiFeedback = async (submissionId: string, attemptsLeft = 20) => {
+    if (!problemId || !accessToken) return
+    if (attemptsLeft <= 0) return
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      const { submissions: list } = await submissionApi.listByProblem(problemId, accessToken)
+      setSubmissions(list)
+      const target = list.find((s) => s.id === submissionId)
+      if (!target) return
+      if (target.aiFeedback?.analysisText) {
+        toast.success('Updated AI feedback')
+        return
+      }
+      await pollAiFeedback(submissionId, attemptsLeft - 1)
+    } catch {
+      // ถ้าดึงไม่สำเร็จให้หยุด polling เงียบ ๆ
     }
   }
 
@@ -118,21 +138,56 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [problemId, accessToken])
 
+  const handleSelectSubmission = async (id: string) => {
+    setSelectedSubmissionId(id)
+    if (!accessToken) return
+    try {
+      const { submission } = await submissionApi.getById(id, accessToken)
+      const rawLang = (submission.language ?? '').toLowerCase()
+      const lang: Lang =
+        rawLang === 'javascript' ||
+        rawLang === 'typescript' ||
+        rawLang === 'python' ||
+        rawLang === 'cpp' ||
+        rawLang === 'java' ||
+        rawLang === 'go'
+          ? (rawLang as Lang)
+          : 'typescript'
+
+      setLanguage(lang)
+      setCodeByLang((prev) => ({
+        ...prev,
+        [lang]: submission.code ?? prev[lang],
+      }))
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'โหลดรายละเอียด submission ไม่สำเร็จ'
+      toast.error(message)
+    }
+  }
+
   const handleRun = async () => {
     if (!problemId || !accessToken) return
     setIsRunning(true)
     setActiveTab('output')
+    const loadingId = toast.loading('กำลังรันกับ test cases...')
     try {
       const { run } = await submissionApi.run(
         { problemId, language, code: currentCode() },
         accessToken,
       )
       setRunResult(run)
+      if (run.passedCount === run.totalCount && run.totalCount > 0) {
+        toast.success('โค้ดของคุณผ่านทุก test case ที่เปิดให้ดูแล้ว!')
+      } else {
+        toast.success(`Run เสร็จแล้ว: ผ่าน ${run.passedCount}/${run.totalCount} test case`)
+        // toast.success(`Run เสร็จแล้ว`)
+      }
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Run failed'
+      const message = e instanceof Error ? e.message : 'รันโค้ดไม่สำเร็จ'
       toast.error(message)
       setRunResult(null)
     } finally {
+      toast.dismiss(loadingId)
       setIsRunning(false)
     }
   }
@@ -140,22 +195,33 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
   const handleSubmit = async () => {
     if (!problemId || !accessToken) return
     setIsSubmitting(true)
+    const loadingId = toast.loading('กำลังส่งโค้ดและรอตรวจด้วย judge...')
     try {
       const res = await submissionApi.submit(
         { problemId, language, code: currentCode() },
         accessToken,
       )
       if (res.evaluation) {
-        toast.success(`Submitted: ${res.evaluation.passedCount}/${res.evaluation.totalCount} passed`)
+        const { passedCount, totalCount } = res.evaluation
+        if (passedCount === totalCount && totalCount > 0) {
+          toast.success('ส่งสำเร็จ! โค้ดของคุณผ่านทุก test case แล้ว')
+        } else {
+          // toast.success(`ส่งสำเร็จ`)
+          toast.success(`ส่งสำเร็จ: ผ่าน ${passedCount}/${totalCount} test case`)
+        }
       } else {
-        toast.success(res.message ?? 'Submitted')
+        toast.success(res.message ?? 'ส่งโค้ดสำเร็จ')
       }
       await loadSubmissions()
+      if (res.submission?.id) {
+        void pollAiFeedback(res.submission.id)
+      }
       setActiveTab('submissions')
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Submit failed'
+      const message = e instanceof Error ? e.message : 'ส่งโค้ดไม่สำเร็จ'
       toast.error(message)
     } finally {
+      toast.dismiss(loadingId)
       setIsSubmitting(false)
     }
   }
@@ -176,31 +242,49 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
 
   return (
     <PageLayout currentPage="workspace" onNavigate={onNavigate} fullScreen>
-      <main className="flex-1 flex flex-col bg-[#0b0e14] text-slate-100">
-        {/* Top bar with breadcrumbs */}
-        <header className="h-12 flex items-center justify-between px-4 border-b border-slate-800 bg-[#050812]">
-          <div className="breadcrumbs text-xs text-slate-400">
-            <ul>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => onNavigate('problems')}
-                  className="hover:text-white"
-                >
-                  Problems
-                </button>
-              </li>
-              <li>Workspace</li>
-              {state.problem && <li>{state.problem.title}</li>}
-            </ul>
+      <main className="flex-1 flex flex-col min-h-0 bg-[#0b0e14] text-slate-100 overflow-hidden">
+        {/* Top bar with breadcrumbs — responsive: wrap, truncate, icon-only back on small */}
+        <header className="shrink-0 h-12 min-h-12 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2 border-b border-slate-800 bg-[#050812]">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="breadcrumbs text-xs text-slate-400 min-w-0 overflow-hidden">
+              <ul className="flex items-center gap-1 truncate">
+                <li className="truncate">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('problems')}
+                    className="hover:text-white truncate"
+                  >
+                    Problems
+                  </button>
+                </li>
+                <li className="truncate">Workspace</li>
+                {state.problem && (
+                  <li className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-none" title={state.problem.title}>
+                    {state.problem.title}
+                  </li>
+                )}
+              </ul>
+            </div>
+            {/* Mobile: ปุ่มเปิดโจทย์ (ซ่อนเมื่อมี aside โจทย์อยู่แล้ว) */}
+            {!state.loading && state.problem && (
+              <button
+                type="button"
+                onClick={() => setShowProblemDrawer(true)}
+                className="md:hidden btn btn-xs btn-ghost text-slate-300 border border-slate-600 shrink-0"
+                title="ดูโจทย์"
+              >
+                <span className="material-symbols-outlined text-sm">description</span>
+              </button>
+            )}
           </div>
           <button
             type="button"
             onClick={() => onNavigate('problems')}
-            className="btn btn-xs btn-ghost text-slate-300 border border-slate-700"
+            className="btn btn-xs btn-ghost text-slate-300 border border-slate-700 shrink-0"
+            title="กลับไปรายการโจทย์"
           >
-            <span className="material-symbols-outlined text-sm mr-1">arrow_back</span>
-            Back
+            <span className="material-symbols-outlined text-sm sm:mr-1">arrow_back</span>
+            <span className="hidden sm:inline">Back</span>
           </button>
         </header>
 
@@ -220,9 +304,9 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
 
         {/* Main workspace when problem loaded */}
         {!state.loading && state.problem && (
-          <div className="flex flex-1 overflow-hidden">
-            {/* Left: problem description */}
-            <aside className="hidden md:flex md:flex-col w-[360px] border-r border-slate-800 bg-[#020617]">
+          <div className="flex flex-1 min-h-0 overflow-hidden w-full">
+            {/* Left: problem description (hidden on small; use drawer instead) */}
+            <aside className="hidden md:flex md:flex-col md:w-[320px] lg:w-[360px] shrink-0 border-r border-slate-800 bg-[#020617] overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
                 <div>
                   <h1 className="text-sm font-semibold text-slate-100">{state.problem.title}</h1>
@@ -254,17 +338,17 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
             </aside>
 
             {/* Middle: editor + bottom panel */}
-            <section className="flex-1 flex flex-col min-w-0 bg-[#020617]">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-[#020617]">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-sm text-slate-200 font-semibold">
-                    <span className="material-symbols-outlined text-[18px] text-slate-400">code</span>
+            <section className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden bg-[#020617]">
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 py-2 sm:py-3 border-b border-slate-800 bg-[#020617]">
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-200 font-semibold">
+                    <span className="material-symbols-outlined text-base sm:text-[18px] text-slate-400">code</span>
                     <span>Editor</span>
                   </div>
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value as Lang)}
-                    className="select select-sm bg-slate-900 border-slate-700 text-slate-100"
+                    className="select select-sm select-bordered bg-slate-900 border-slate-700 text-slate-100 max-w-[130px] sm:max-w-none"
                   >
                     {LANGUAGE_OPTIONS.map((l) => (
                       <option key={l.id} value={l.id}>
@@ -273,7 +357,7 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                     ))}
                   </select>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5 sm:gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={handleRun}
@@ -283,9 +367,9 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                     {isRunning ? (
                       <span className="loading loading-spinner loading-xs" />
                     ) : (
-                      <span className="material-symbols-outlined text-[18px]">play_arrow</span>
+                      <span className="material-symbols-outlined text-base sm:text-[18px]">play_arrow</span>
                     )}
-                    Run
+                    <span className="hidden sm:inline">Run</span>
                   </button>
                   <button
                     type="button"
@@ -296,15 +380,16 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                     {isSubmitting ? (
                       <span className="loading loading-spinner loading-xs" />
                     ) : (
-                      <span className="material-symbols-outlined text-[18px]">upload</span>
+                      <span className="material-symbols-outlined text-base sm:text-[18px]">upload</span>
                     )}
-                    Submit
+                    <span className="hidden sm:inline">Submit</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 min-h-0">
-                <div className="h-full">
+              {/* Editor: ความสูงยืดหยุ่น มี min/max — จอเล็กจะหดให้กล่อง testcase มีที่ เลื่อนได้, CodeMirror เลื่อนในตัวเอง */}
+              <div className="shrink min-h-[100px] max-h-[240px] sm:max-h-[280px] md:max-h-[320px] basis-[240px] sm:basis-[280px] md:basis-[320px]">
+                <div className="h-full w-full overflow-auto rounded-b-lg border-b border-slate-800">
                   <CodeMirror
                     value={codeByLang[language]}
                     height="100%"
@@ -339,40 +424,51 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                 </div>
               </div>
 
-              {/* Bottom panel: testcases / output / submissions */}
-              <div className="border-t border-slate-800 bg-[#050812]">
-                <div className="px-3 py-2 flex items-center justify-between">
-                  <div className="tabs tabs-boxed bg-slate-900/40">
+              {/* Bottom panel: รับพื้นที่ที่เหลือ + เลื่อนได้ (min-h-0 ให้ flex หดได้เมื่อจอเล็กมาก) */}
+              <div className="flex-1 min-h-0 flex flex-col border-t border-slate-800 bg-[#050812] overflow-hidden">
+                <div className="shrink-0 px-2 sm:px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="tabs tabs-boxed bg-slate-900/40 flex flex-wrap">
                     <button
                       type="button"
-                      className={`tab ${activeTab === 'testcases' ? 'tab-active' : ''}`}
+                      className={`tab text-xs sm:text-sm ${activeTab === 'testcases' ? 'tab-active' : ''}`}
                       onClick={() => setActiveTab('testcases')}
                     >
                       Testcases
                     </button>
                     <button
                       type="button"
-                      className={`tab ${activeTab === 'output' ? 'tab-active' : ''}`}
+                      className={`tab text-xs sm:text-sm ${activeTab === 'output' ? 'tab-active' : ''}`}
                       onClick={() => setActiveTab('output')}
                     >
                       Output
                     </button>
                     <button
                       type="button"
-                      className={`tab ${activeTab === 'submissions' ? 'tab-active' : ''}`}
+                      className={`tab text-xs sm:text-sm ${activeTab === 'submissions' ? 'tab-active' : ''}`}
                       onClick={() => setActiveTab('submissions')}
                     >
                       Submissions
                     </button>
                   </div>
                   {runResult && (
-                    <div className="text-xs text-slate-400">
-                      Run: <span className="font-semibold text-slate-200">{runResult.passedCount}/{runResult.totalCount}</span> · {runResult.executionTimeMs}ms
+                    <div className="text-[10px] sm:text-xs text-slate-400 flex items-center gap-1 sm:gap-2 flex-wrap">
+                      <span>
+                        Run:{' '}
+                        <span className="font-semibold text-slate-200">
+                          {runResult.passedCount}/{runResult.totalCount}
+                        </span>{' '}
+                        · {runResult.executionTimeMs}ms
+                      </span>
+                      {runResult.totalCount > 0 && runResult.passedCount === runResult.totalCount && (
+                        <span className="text-emerald-400 font-semibold">
+                          ผ่านทุก test case แล้ว ✓
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
 
-                <div className="max-h-[260px] overflow-y-auto px-4 pb-4">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 sm:px-4 pb-4">
                   {activeTab === 'testcases' && (
                     <div className="space-y-3 text-sm">
                       {state.problem.testCases.filter((t) => !t.isHidden).length === 0 ? (
@@ -380,9 +476,9 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                       ) : (
                         state.problem.testCases
                           .filter((t) => !t.isHidden)
-                          .map((tc) => (
+                          .map((tc, index) => (
                             <div key={tc.id} className="rounded-xl border border-slate-700 bg-slate-900/40 p-3 space-y-1">
-                              <p className="font-semibold text-slate-100">Case #{tc.id}</p>
+                              <p className="font-semibold text-slate-100">Case #{index + 1}</p>
                               <p className="text-slate-300">
                                 <span className="font-semibold">Input:</span>{' '}
                                 <span className="font-mono">{tc.inputData ?? '—'}</span>
@@ -402,10 +498,10 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                       {!runResult ? (
                         <p className="text-slate-500">Run เพื่อดูผลลัพธ์ (รองรับ JS/TS ก่อน)</p>
                       ) : (
-                        runResult.results.map((r) => (
+                        runResult.results.map((r, index) => (
                           <div key={r.id} className="rounded-xl border border-slate-700 bg-slate-900/40 p-3">
                             <div className="flex items-center justify-between">
-                              <p className="font-semibold text-slate-100">Case #{r.id}</p>
+                              <p className="font-semibold text-slate-100">Case #{index + 1}</p>
                               <span className={`badge badge-sm ${r.passed ? 'badge-success' : 'badge-error'}`}>
                                 {r.passed ? 'PASS' : 'FAIL'}
                               </span>
@@ -434,19 +530,46 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                       {submissions.length === 0 ? (
                         <p className="text-slate-500">No submissions yet.</p>
                       ) : (
-                        submissions.map((s) => (
+                    submissions.map((s) => (
                           <button
                             type="button"
                             key={s.id}
-                            onClick={() => setSelectedSubmissionId(s.id)}
-                            className={`w-full text-left rounded-xl border px-3 py-2 transition-colors ${selectedSubmissionId === s.id
-                              ? 'border-[#5586e7] bg-[#5586e7]/10'
-                              : 'border-slate-700 bg-slate-900/40 hover:bg-slate-900/60'
+                            onClick={() => void handleSelectSubmission(s.id)}
+                            className={`w-full text-left rounded-xl border px-3 py-2 cursor-pointer
+                              transition-all duration-200 ease-out
+                              transform active:scale-[0.98]
+                              ${
+                                selectedSubmissionId === s.id
+                                  ? 'border-[#5586e7] bg-[#5586e7]/10 shadow-md shadow-[#5586e7]/20 scale-[1.01]'
+                                  : s.status === 'accepted'
+                                    ? 'border-emerald-500/70 bg-emerald-900/30 hover:bg-emerald-900/50 hover:border-emerald-400 hover:shadow-sm hover:shadow-emerald-800/40 hover:scale-[1.01]'
+                                    : s.status === 'wrong_answer'
+                                      ? 'border-rose-500/70 bg-rose-900/30 hover:bg-rose-900/50 hover:border-rose-400 hover:shadow-sm hover:shadow-rose-800/40 hover:scale-[1.01]'
+                                      : 'border-slate-700 bg-slate-900/40 hover:bg-slate-900/70 hover:border-slate-500 hover:shadow-sm hover:shadow-slate-800/50 hover:scale-[1.01]'
                               }`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-slate-100">{s.status.toUpperCase()}</span>
+                                <span
+                                  className={`font-semibold flex items-center gap-1 ${
+                                    s.status === 'accepted'
+                                      ? 'text-emerald-300'
+                                      : s.status === 'wrong_answer'
+                                        ? 'text-rose-300'
+                                        : 'text-amber-200'
+                                  }`}
+                                >
+                                  {s.status === 'accepted' && (
+                                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                                  )}
+                                  {s.status === 'wrong_answer' && (
+                                    <span className="material-symbols-outlined text-sm">cancel</span>
+                                  )}
+                                  {s.status !== 'accepted' && s.status !== 'wrong_answer' && (
+                                    <span className="material-symbols-outlined text-sm">hourglass_top</span>
+                                  )}
+                                  {s.status.toUpperCase()}
+                                </span>
                                 <span className="badge badge-outline badge-sm text-slate-200">{(s.language ?? '—').toUpperCase()}</span>
                                 {s.executionTime != null && <span className="text-xs text-slate-400">{s.executionTime}ms</span>}
                               </div>
@@ -468,8 +591,8 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
               </div>
             </section>
 
-            {/* Right: AI panel */}
-            <aside className="hidden lg:flex lg:flex-col w-[360px] border-l border-slate-800 bg-[#020617]">
+            {/* Right: AI panel (hidden on small/medium) */}
+            <aside className="hidden lg:flex lg:flex-col lg:w-[320px] xl:w-[360px] shrink-0 border-l border-slate-800 bg-[#020617] overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#5586e7]">auto_awesome</span>
@@ -513,6 +636,36 @@ export default function ProblemWorkspacePage({ onNavigate }: ProblemWorkspacePag
                 })()}
               </div>
             </aside>
+          </div>
+        )}
+
+        {/* Mobile drawer: โจทย์ (แสดงเมื่อกดปุ่มโจทย์บนจอเล็ก) */}
+        {state.problem && showProblemDrawer && (
+          <div className="md:hidden fixed inset-0 z-50 flex flex-col bg-[#0b0e14]">
+            <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-[#050812]">
+              <span className="text-sm font-semibold text-slate-100">โจทย์</span>
+              <button
+                type="button"
+                onClick={() => setShowProblemDrawer(false)}
+                className="btn btn-sm btn-ghost text-slate-300"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 text-sm text-slate-200">
+              <div className="flex items-start justify-between gap-2">
+                <h1 className="text-base font-semibold text-slate-100">{state.problem.title}</h1>
+                <div className={difficultyBadge(state.problem.difficulty)}>
+                  <span className="text-[10px] font-bold">{difficultyLabel(state.problem.difficulty)}</span>
+                </div>
+              </div>
+              <p className="text-slate-500 text-xs">
+                Created at {new Date(state.problem.createdAt).toLocaleDateString()}
+              </p>
+              <p className="whitespace-pre-line leading-relaxed">
+                {state.problem.description}
+              </p>
+            </div>
           </div>
         )}
       </main>

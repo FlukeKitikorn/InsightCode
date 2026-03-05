@@ -11,7 +11,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    throw new Error((data as any).message || 'Something went wrong')
+    const message = (data as any).message || 'Something went wrong'
+    if (res.status === 401 && message === 'Invalid or expired access token') {
+      window.dispatchEvent(new CustomEvent('insightcode:auth-expired'))
+    }
+    throw new Error(message)
   }
 
   return data as T
@@ -48,6 +52,16 @@ export interface RunResult {
   }>
 }
 
+export interface SubmissionDetail {
+  id: string
+  problemId: string | null
+  language: string | null
+  code: string
+  status: SubmissionStatus
+  executionTime: number | null
+  createdAt: string
+}
+
 export const submissionApi = {
   listByProblem: (problemId: string, accessToken: string) =>
     request<{ submissions: SubmissionItem[] }>(`/submissions?problemId=${encodeURIComponent(problemId)}`, {
@@ -71,6 +85,11 @@ export const submissionApi = {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}` },
       body: JSON.stringify(payload),
+    }),
+
+  getById: (id: string, accessToken: string) =>
+    request<{ submission: SubmissionDetail }>(`/submissions/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
     }),
 }
 

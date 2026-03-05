@@ -1,7 +1,8 @@
 import type { Page } from '../../types'
 import { useAuth } from '../../hooks/useAuth'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import { notificationApi } from '../../services/notificationApi'
 
 interface NavbarProps {
     currentPage: Page
@@ -28,16 +29,59 @@ function getInitials(fullName: string | null, email: string | undefined): string
 }
 
 export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
-    const { user, logout } = useAuth()
+    const { user, accessToken, logout } = useAuth()
     const [isNotifOpen, setIsNotifOpen] = useState(false)
+    const [announcements, setAnnouncements] = useState<
+        { id: number; title: string; body: string; createdAt: string; type: string }[]
+    >([])
+    const [notifLoaded, setNotifLoaded] = useState(false)
 
     const handleLogout = async () => {
         await logout()
-        toast.success('Signed out successfully')
+        toast.success('ออกจากระบบสำเร็จ')
         onNavigate('auth')
     }
 
     const showNav = currentPage !== 'auth'
+
+    // โหลด announcements (เฉพาะที่ยังไม่อ่าน) ทันทีเมื่ออยู่หน้าที่แสดง Navbar
+    useEffect(() => {
+        if (!showNav) return
+        notificationApi
+            .listAnnouncements(accessToken ?? undefined)
+            .then((res) => {
+                setAnnouncements(res.announcements ?? [])
+                setNotifLoaded(true)
+            })
+            .catch(() => {
+                setNotifLoaded(true)
+            })
+    }, [showNav, accessToken])
+
+    // เมื่อเปิดกล่อง notification ให้ refresh ข้อมูลล่าสุด
+    useEffect(() => {
+        if (!showNav || !isNotifOpen) return
+        notificationApi
+            .listAnnouncements(accessToken ?? undefined)
+            .then((res) => setAnnouncements(res.announcements ?? []))
+            .catch(() => {})
+    }, [showNav, isNotifOpen, accessToken])
+
+    const handleMarkAllRead = async () => {
+        if (!accessToken) {
+            setAnnouncements([])
+            setIsNotifOpen(false)
+            return
+        }
+        try {
+            await notificationApi.markAllRead(accessToken)
+            setAnnouncements([])
+            setIsNotifOpen(false)
+            toast.success('ทำเครื่องหมายอ่านทั้งหมดแล้ว')
+        } catch {
+            toast.error('ดำเนินการไม่สำเร็จ')
+        }
+    }
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md dark:bg-[#111621]/80 dark:border-slate-800">
@@ -94,7 +138,9 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                                 className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer relative"
                             >
                                 <span className="material-symbols-outlined">notifications</span>
-                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+                                {announcements.length > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+                                )}
                             </button>
                             {isNotifOpen && (
                                 <div className="absolute right-4 top-14 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl p-3 space-y-2 text-sm z-40">
@@ -110,31 +156,41 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                                             <span className="material-symbols-outlined text-sm">close</span>
                                         </button>
                                     </div>
-                                    <div className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                        <span className="material-symbols-outlined text-[#5586e7] text-base mt-0.5">bolt</span>
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                                                New AI insights available
-                                            </p>
-                                            <p className="text-[11px] text-slate-500">
-                                                Your latest coding session has been analyzed. View suggestions in Analytics.
-                                            </p>
+                                    {announcements.length === 0 ? (
+                                        <div className="text-[11px] text-slate-500 py-2 text-center">
+                                            ไม่มีประกาศใหม่จากระบบ
                                         </div>
-                                    </div>
-                                    <div className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                                        <span className="material-symbols-outlined text-amber-500 text-base mt-0.5">schedule</span>
-                                        <div>
-                                            <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                                                Daily challenge reminder
-                                            </p>
-                                            <p className="text-[11px] text-slate-500">
-                                                Don&apos;t forget to complete today&apos;s problem to keep your streak.
-                                            </p>
-                                        </div>
-                                    </div>
+                                    ) : (
+                                        announcements.map((a) => (
+                                            <div
+                                                key={a.id}
+                                                className="flex items-start gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                            >
+                                                <span
+                                                    className={`material-symbols-outlined text-base mt-0.5 ${
+                                                        a.type === 'warning'
+                                                            ? 'text-amber-500'
+                                                            : a.type === 'danger'
+                                                            ? 'text-red-500'
+                                                            : 'text-[#5586e7]'
+                                                    }`}
+                                                >
+                                                    campaign
+                                                </span>
+                                                <div>
+                                                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                                                        {a.title}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 whitespace-pre-line">
+                                                        {a.body}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
                                     <button
                                         type="button"
-                                        onClick={() => setIsNotifOpen(false)}
+                                        onClick={handleMarkAllRead}
                                         className="w-full mt-1 text-[11px] font-bold text-[#5586e7] hover:underline text-center"
                                     >
                                         Mark all as read
@@ -146,7 +202,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                             <button
                                 type="button"
                                 onClick={() => onNavigate('profile')}
-                                className="h-9 w-9 rounded-full bg-[#5586e7]/20 border-2 border-[#5586e7]/30 flex items-center justify-center font-bold text-[#5586e7] text-sm overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#5586e7]/60"
+                                className="h-9 w-9 rounded-full bg-[#5586e7]/20 border-2 border-[#5586e7]/30 flex items-center justify-center font-bold text-[#5586e7] text-sm overflow-hidden focus:outline-none focus:ring-2 focus:ring-[#5586e7]/60 cursor-pointer"
                             >
                                 {user?.avatarUrl ? (
                                     <img

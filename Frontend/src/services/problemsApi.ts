@@ -3,6 +3,7 @@ export interface ProblemSummary {
   title: string
   difficulty: string
   createdAt: string
+  acceptance?: string | null
 }
 
 interface ListProblemsResponse {
@@ -46,7 +47,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const problemsApi = {
-  list: () => request<ListProblemsResponse>('/problems'),
-  get: (id: string) => request<GetProblemResponse>(`/problems/${id}`),
+  list: (accessToken?: string) =>
+    request<ListProblemsResponse>('/problems', {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    }),
+  get: (id: string, accessToken?: string) =>
+    request<GetProblemResponse>(`/problems/${id}`, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    }),
 }
 
