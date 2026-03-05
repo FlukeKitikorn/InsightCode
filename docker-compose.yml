@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: coding_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: InsightCode
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  redis:
+    image: redis:7
+    container_name: coding_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: always
+    ports:
+      - "5540:5540"
+    depends_on:
+      - redis
+    volumes:
+      - redisinsight_data:/db
+
+  # backend:
+  #   build: ./backend
+  #   ports:
+  #     - "4000:4000"
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   env_file:
+  #     - ./backend/.env
+
+  # worker:
+  #   build: ./worker
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   env_file:
+  #     - ./worker/.env
+
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:80"
+
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: always
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
+volumes:
+  postgres_data:
+    name: coding_postgres_data
+  pgadmin_data:
+    name: coding_pgadmin_data
+  redis_data:
+    name: coding_redis_data
+  redisinsight_data:
+    name: coding_redisinsight_data
+  portainer_data:
+    name: coding_portainer_data
