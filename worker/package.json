@@ -1,0 +1,15 @@
+{
+  "name": "insightcode-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node -r dotenv/config src/index.mjs",
+    "start": "node -r dotenv/config src/index.mjs"
+  },
+  "dependencies": {
+    "bullmq": "^5.70.1",
+    "dotenv": "^17.3.1"
+  }
+}
+
