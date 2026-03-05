@@ -1,0 +1,33 @@
+{
+  "problems": [
+    {
+      "title": "Two Sum",
+      "description": "Given an array of integers and a target, return indices of the two numbers that add up to target.",
+      "difficulty": "EASY",
+      "testCases": [
+        {
+          "inputData": "[2, 7, 11, 15]\n9",
+          "expectedOutput": "[0, 1]",
+          "isHidden": false
+        },
+        {
+          "inputData": "[3, 2, 4]\n6",
+          "expectedOutput": "[1, 2]",
+          "isHidden": true
+        }
+      ]
+    },
+    {
+      "title": "Reverse String",
+      "description": "Reverse the input string.",
+      "difficulty": "EASY",
+      "testCases": [
+        {
+          "inputData": "\"hello\"",
+          "expectedOutput": "\"olleh\"",
+          "isHidden": false
+        }
+      ]
+    }
+  ]
+}
