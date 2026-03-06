@@ -15,14 +15,9 @@ Online coding practice platform with automated judging and AI-powered code feedb
 
 ## Tech Stack
 
-<p>
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" height="40"/>
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vite/vite-original.svg" height="40"/>
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="40"/>
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" height="40"/>
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" height="40"/>
-<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg" height="40"/>
-</p>
+[![Icoziv-icons](https://i.icoziv.workers.dev/icons?i=bullmq-dark,daisyui,docker,javascript,jwt-dark,nodejs-dark,postgresql-dark,preact-dark,prisma,reactrouter,tailwindcss-dark,vite-dark,zustand-dark)](https://i.icoziv.workers.dev)
+
+- **AI** : 
 
 ---
 
