@@ -17,7 +17,7 @@ Online coding practice platform with automated judging and AI-powered code feedb
 
 [![Icoziv-icons](https://i.icoziv.workers.dev/icons?i=bullmq-dark,daisyui,docker,javascript,jwt-dark,nodejs-dark,postgresql-dark,preact-dark,prisma,reactrouter,tailwindcss-dark,vite-dark,zustand-dark)](https://i.icoziv.workers.dev)
 
-- **AI** : 
+- **AI** : **OpenRouter** for chat and code analysis
 
 ---
 
