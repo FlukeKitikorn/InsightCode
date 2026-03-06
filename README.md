@@ -13,17 +13,15 @@ Online coding practice platform with automated judging and AI-powered code feedb
 
 ---
 
-## Stack
+## Tech Stack
 
 | Layer | Tech |
-|-------|------|
-| Frontend | React 19, Vite, React Router, Zustand, Tailwind, DaisyUI, CodeMirror |
-| Backend | Node.js, Express, Prisma, PostgreSQL, JWT (access + refresh), BullMQ |
-| Worker | Node.js, BullMQ (consumes Redis queue, calls internal judge API) |
-| Queue | Redis (BullMQ backend) |
-| AI | OpenRouter (Gemini/Claude etc.) for chat and code analysis |
-
----
+|------|------|
+| **Frontend** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" height="20"/> React 19 • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vite/vite-original.svg" height="20"/> Vite • React Router • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" height="20"/> Zustand • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg" height="20"/> Tailwind • DaisyUI • CodeMirror |
+| **Backend** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="20"/> Node.js • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" height="20"/> Express • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/prisma/prisma-original.svg" height="20"/> Prisma • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" height="20"/> PostgreSQL • JWT • BullMQ |
+| **Worker** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="20"/> Node.js • BullMQ |
+| **Queue** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg" height="20"/> Redis |
+| **AI** | <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/openai.svg" height="20"/> OpenRouter (Gemini / Claude etc.) |
 
 ## Project structure
 
