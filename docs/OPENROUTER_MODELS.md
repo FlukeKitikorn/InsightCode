@@ -1,43 +1,44 @@
-# แนะนำ Model บน OpenRouter สำหรับ InsightCode
+# OpenRouter model recommendations for InsightCode
 
-งานหลักของระบบที่ใช้ LLM:
-- **วิเคราะห์โค้ดต่อ submission** — คุณภาพ โครงสร้าง ความซับซ้อน คำแนะนำ (ภาษาไทย + โค้ด)
-- **สรุปแนวโน้ม** จากหลาย feedback
-- **Ask AI** — ตอบคำถามจาก context (เช่น "ควรฝึกอะไรต่อ")
-- **ให้คะแนนคุณภาพ** 0–100
+Main LLM use cases in the system:
 
----
-
-## แนะนำตาม use case
-
-### 1. วิเคราะห์โค้ดต่อ submission (เรียกบ่อย, ต่อ submission)
-
-| ลำดับ | Model ID | เหตุผล | ราคาโดยประมาณ |
-|-------|----------|--------|----------------|
-| **1** | `google/gemini-2.0-flash-exp:free` | เร็ว ฟรี เหมาะรันทีละ submission ภาษาไทยได้ดี | ฟรี |
-| **2** | `anthropic/claude-3.5-haiku` | เร็ว ถูก คุณภาพดี อ่านโค้ดและสรุปได้ดี | ถูก |
-| **3** | `deepseek/deepseek-coder-33b-instruct` | เจาะจงเรื่องโค้ด อ่าน structure / best practice ได้ดี | ปานกลาง |
-| **4** | `openai/gpt-4o-mini` | สมดุลระหว่างความเร็ว/คุณภาพ รองรับหลายภาษา | ปานกลาง |
-
-**แนะนำเริ่มต้น:** `google/gemini-2.0-flash-exp:free` หรือ `anthropic/claude-3.5-haiku`  
-- ถ้าต้องการ **ประหยัด/ฟรี** และ volume สูง → Gemini Flash (free)  
-- ถ้าต้องการ **คุณภาพวิเคราะห์โค้ดชัดขึ้น** → Claude 3.5 Haiku  
+- **Per-submission code analysis** — quality, structure, complexity, suggestions (natural language + code)
+- **Trend summarization** from multiple feedback items
+- **Ask AI** — answer questions from context (e.g. “What should I practice next?”)
+- **Quality score** 0–100 per submission
 
 ---
 
-### 2. Ask AI / สรุปแนวโน้ม (เรียกไม่บ่อย, context ยาวขึ้น)
+## Recommendations by use case
 
-| ลำดับ | Model ID | เหตุผล |
-|-------|----------|--------|
-| **1** | `anthropic/claude-3.5-sonnet` | สรุปและตอบคำถามจาก context ยาวได้ดี |
-| **2** | `google/gemini-2.0-flash-exp:free` | ฟรี รองรับ context ยาว |
-| **3** | `openai/gpt-4o-mini` | สมดุล ราคาไม่สูงมาก |
+### 1. Per-submission code analysis (frequent, one call per submission)
+
+| Rank | Model ID | Reason | Cost (approx) |
+|------|----------|--------|----------------|
+| **1** | `google/gemini-2.0-flash-exp:free` | Fast, free, good for per-submission runs, works well with Thai | Free |
+| **2** | `anthropic/claude-3.5-haiku` | Fast, cheap, good quality, reads code and summarizes well | Low |
+| **3** | `deepseek/deepseek-coder-33b-instruct` | Code-focused, good at structure / best practices | Medium |
+| **4** | `openai/gpt-4o-mini` | Balanced speed/quality, multilingual | Medium |
+
+**Suggested default:** `google/gemini-2.0-flash-exp:free` or `anthropic/claude-3.5-haiku`  
+- For **free / low cost** and high volume → Gemini Flash (free)  
+- For **clearer code analysis** → Claude 3.5 Haiku  
 
 ---
 
-## วิธีใช้ในโปรเจกต์
+### 2. Ask AI / trend summarization (less frequent, longer context)
 
-1. ตั้งค่าใน `.env` (Backend หรือ worker ที่เรียก OpenRouter):
+| Rank | Model ID | Reason |
+|------|----------|--------|
+| **1** | `anthropic/claude-3.5-sonnet` | Good at summarizing and answering from long context |
+| **2** | `google/gemini-2.0-flash-exp:free` | Free, supports long context |
+| **3** | `openai/gpt-4o-mini` | Balanced, moderate cost |
+
+---
+
+## How to use in the project
+
+1. Set in `.env` (Backend or any service calling OpenRouter):
 
    ```env
    OPENROUTER_API_KEY="sk-or-v1-..."
@@ -45,45 +46,31 @@
    OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
    ```
 
-2. เรียก Chat Completions API ของ OpenRouter:
+2. Call OpenRouter Chat Completions API (e.g. from `Backend/src/lib/openrouter.ts`):
 
-   ```http
-   POST https://openrouter.ai/api/v1/chat/completions
-   Authorization: Bearer <OPENROUTER_API_KEY>
-   HTTP-Referer: https://your-app.com   # optional แต่แนะนำ
-   Content-Type: application/json
+   - Use `openRouterChat({ messages, max_tokens, temperature })` with system + user messages.
+   - For code analysis, send code + language + test result summary; ask for short feedback and a quality score 0–100.
 
-   {
-     "model": "google/gemini-2.0-flash-exp:free",
-     "messages": [
-       { "role": "system", "content": "คุณเป็นผู้ช่วยวิเคราะห์โค้ด ให้คำแนะนำสั้นๆ เป็นภาษาไทย และให้คะแนนคุณภาพ 0-100 ในบรรทัดสุดท้ายเป็น Quality: <number>" },
-       { "role": "user", "content": "ภาษา: JavaScript\n\nโค้ด:\n" + code }
-     ],
-     "max_tokens": 512,
-     "temperature": 0.3
-   }
-   ```
-
-3. แนะนำให้ **แยก model ตามงาน** (ใน config หรือ env):
-   - `OPENROUTER_MODEL_ANALYZE` — ใช้วิเคราะห์โค้ดต่อ submission (เลือกแบบเร็ว/ฟรี)
-   - `OPENROUTER_MODEL_ASK` — ใช้ Ask AI / สรุป (เลือกแบบรองรับ context ยาว)
+3. Optional: use **separate env keys per task**:
+   - `OPENROUTER_MODEL_ANALYZE` — per-submission code analysis (fast/free model)
+   - `OPENROUTER_MODEL_ASK` — Ask AI / summarization (model with long context)
 
 ---
 
-## เช็คราคาและ model ล่าสุด
+## Checking pricing and latest models
 
-- ดูรายการ model ทั้งหมด: https://openrouter.ai/models  
-- ดูราคาและ context length: https://openrouter.ai/docs  
-- Filter หมวด **programming** ใน OpenRouter ได้ถ้าต้องการ model เจาะจงโค้ด
+- Model list: https://openrouter.ai/models  
+- Pricing and context length: https://openrouter.ai/docs  
+- Use the **programming** filter on OpenRouter for code-focused models.
 
 ---
 
-## สรุปสั้นๆ
+## Quick summary
 
-| งาน | Model ที่เหมาะที่สุด |
-|-----|------------------------|
-| วิเคราะห์โค้ดต่อ submission (volume สูง) | `google/gemini-2.0-flash-exp:free` หรือ `anthropic/claude-3.5-haiku` |
-| เจาะจงคุณภาพวิเคราะห์โค้ดมาก | `deepseek/deepseek-coder-33b-instruct` |
-| Ask AI / สรุปแนวโน้ม | `anthropic/claude-3.5-sonnet` หรือ `google/gemini-2.0-flash-exp:free` |
+| Task | Best-fit model |
+|------|----------------|
+| Per-submission code analysis (high volume) | `google/gemini-2.0-flash-exp:free` or `anthropic/claude-3.5-haiku` |
+| Highest code analysis quality | `deepseek/deepseek-coder-33b-instruct` |
+| Ask AI / trend summarization | `anthropic/claude-3.5-sonnet` or `google/gemini-2.0-flash-exp:free` |
 
-ถ้าต้องการ **เริ่มเร็วและฟรี** ใช้ `google/gemini-2.0-flash-exp:free` ก่อน แล้วค่อยเปลี่ยนเป็น Claude Haiku หรือ DeepSeek Coder ถ้าต้องการคุณภาพวิเคราะห์โค้ดสูงขึ้น
+For a **quick, free start**, use `google/gemini-2.0-flash-exp:free` first, then switch to Claude Haiku or DeepSeek Coder if you need better analysis quality.

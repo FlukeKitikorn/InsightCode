@@ -1,163 +1,136 @@
-# State Management — หน้าบ้าน (Frontend)
+# State management – Frontend
 
-เอกสารนี้อธิบายสถาปัตยกรรมการจัดการ state ของแอป Frontend (React + Vite) โปรเจกต์ InsightCode
-
----
-
-## ภาพรวม
-
-| ชั้น | เทคโนโลยี | ขอบเขต | ใช้สำหรับ |
-|-----|-----------|--------|-----------|
-| **Global auth** | Zustand (`authStore`) | ทั้งแอป | ผู้ใช้ล็อกอิน, token, การ guard route |
-| **Global UI** | React Context (`LoadingContext`) | ทั้งแอป | สถานะ loading ระหว่างเปลี่ยนหน้า (skeleton) |
-| **หน้าหรือคอมโพเนนต์** | `useState` / `useReducer` | ภายในหน้า/คอมโพเนนต์ | ฟอร์ม, รายการจาก API, modal, filter, pagination |
-
-- **ไม่มี** Redux, React Query, หรือ global store สำหรับ server state  
-- แต่ละหน้าดึงข้อมูลจาก API แล้วเก็บใน **local state** (useState) ของหน้านั้น
+This document describes the state management approach of the InsightCode frontend (React + Vite).
 
 ---
 
-## 1. Auth State (Zustand)
+## Overview
 
-**ไฟล์:** `Frontend/src/store/authStore.ts`
+| Layer | Technology | Scope | Purpose |
+|-------|-------------|--------|---------|
+| **Global auth** | Zustand (`authStore`) | App-wide | Logged-in user, token, route guards |
+| **Global UI** | React Context (`LoadingContext`) | App-wide | Loading state during navigation (skeleton) |
+| **Page / component** | `useState` / `useReducer` | Within page/component | Forms, API lists, modals, filters, pagination |
 
-### รูปแบบ
+- There is **no** Redux, React Query, or global store for server state.
+- Each page fetches from the API and keeps data in **local state** (useState).
 
-- ใช้ **Zustand** (`create`) เป็น store เดียวสำหรับ auth ทั้งแอป
-- อ่านผ่าน hook: `useAuthStore()`
+---
+
+## 1. Auth state (Zustand)
+
+**File:** `Frontend/src/store/authStore.ts`
+
+- Single **Zustand** store for auth, used via `useAuthStore()`.
 
 ### State
 
-| ค่า | ประเภท | ความหมาย |
-|----|--------|-----------|
-| `user` | `AuthUser \| null` | ข้อมูล user ปัจจุบัน (id, email, role, fullName, …) |
-| `accessToken` | `string \| null` | JWT access token ไว้ใส่ใน header ตอนเรียก API |
-| `isAuthenticated` | `boolean` | ว่าเข้าสู่ระบบแล้วหรือไม่ |
-| `isLoading` | `boolean` | กำลังรอ silent refresh ตอนเปิดแอป (เริ่มต้นเป็น `true`) |
+| Field | Type | Meaning |
+|-------|------|---------|
+| `user` | `AuthUser \| null` | Current user (id, email, role, fullName, …) |
+| `accessToken` | `string \| null` | JWT access token for API headers |
+| `isAuthenticated` | `boolean` | Whether the user is logged in |
+| `isLoading` | `boolean` | Waiting for silent refresh on app load (starts true) |
 
 ### Actions
 
-| Action | การทำงาน |
-|--------|----------|
-| `setAuth(user, accessToken)` | ตั้งว่า login สำเร็จ (user + token), ปิด loading |
-| `setAccessToken(token)` | อัปเดตเฉพาะ token |
-| `updateUser(user)` | อัปเดตข้อมูล user (เช่นหลังแก้ profile) |
-| `clearAuth()` | ออกจากระบบ (ล้าง user + token) |
-| `setLoading(loading)` | ตั้งสถานะ isLoading (ใช้ตอน boot) |
+| Action | Effect |
+|--------|--------|
+| `setAuth(user, accessToken)` | Set logged-in state and turn off loading |
+| `setAccessToken(token)` | Update token only |
+| `updateUser(user)` | Update user (e.g. after profile edit) |
+| `clearAuth()` | Log out (clear user + token) |
+| `setLoading(loading)` | Set isLoading (used on boot) |
 
-### การใช้งาน
+### Usage
 
-- **App.tsx**: ใช้ `isAuthenticated`, `isLoading`, `user`, `setAuth`, `clearAuth`, `setLoading` สำหรับ  
-  - silent refresh ตอนเปิดแอป  
-  - guard route (`RequireAuth`, `RequireAdmin`)  
-  - listener `insightcode:auth-expired` → clearAuth + redirect
-- **useAuth** (`hooks/useAuth.ts`): ห่อการเรียก `authApi` (login, register, adminLogin, logout, silentRefresh) แล้วอัปเดต store ผ่าน `setAuth` / `clearAuth`
-- **หน้าต่างๆ / Navbar**: ใช้ `useAuthStore()` เพื่อเอา `user`, `accessToken`, `isAuthenticated` มาแสดงหรือส่งให้ API
+- **App.tsx:** Uses auth state for silent refresh, route guards (`RequireAuth`, `RequireAdmin`), and `insightcode:auth-expired` → clearAuth + redirect.
+- **useAuth** (`hooks/useAuth.ts`): Wraps `authApi` (login, register, adminLogin, logout, silentRefresh) and updates the store.
+- **Pages / Navbar:** Use `useAuthStore()` for `user`, `accessToken`, `isAuthenticated`.
 
 ---
 
-## 2. Loading Context (React Context)
+## 2. Loading context (React Context)
 
-**ไฟล์:** `Frontend/src/contexts/LoadingContext.tsx`
+**File:** `Frontend/src/contexts/LoadingContext.tsx`
 
-### รูปแบบ
-
-- **createContext** + **useState** ภายใน Provider  
-- ให้ทั้งแอปใช้สถานะ “กำลังเปลี่ยนหน้า” เพื่อแสดง full-page skeleton
+- **createContext** + **useState** in a Provider to expose a global “navigating” state for full-page skeleton.
 
 ### State & API
 
-| ค่า | ประเภท | ความหมาย |
-|----|--------|-----------|
-| `loading` | `boolean` | กำลังอยู่ในช่วง “เปลี่ยนหน้า” หรือไม่ |
-| `setLoading(value)` | `(value: boolean) => void` | ตั้งค่า loading |
+| Field | Type | Meaning |
+|-------|------|---------|
+| `loading` | `boolean` | Whether we are in a “navigating” period |
+| `setLoading(value)` | `(value: boolean) => void` | Set loading |
 
-### การให้ Provider
+### Provider
 
-- **User app:** `main.tsx` ห่อ `<App />` ด้วย `<LoadingProvider>`
-- **Admin app:** `admin-main.tsx` ห่อด้วย `<LoadingProvider>` เช่นกัน
+- User app: `main.tsx` wraps `<App />` with `<LoadingProvider>`
+- Admin app: `admin-main.tsx` also wraps with `<LoadingProvider>`
 
-### การใช้งาน
+### Usage
 
-- **App.tsx**: ก่อน `navigate()` เรียก `setPageLoading(true)` แล้วหลัง ~500ms เรียก `setPageLoading(false)` เพื่อให้เห็น skeleton สั้นๆ ตอนเปลี่ยน route
-- **PageLayout** (user): ใช้ `useLoading()` อ่าน `loading` → ถ้า `true` แสดง `<GlobalSkeleton />` แทน children
-- **AdminPageLayout**: อ่าน `loading` จาก `useLoading()` เพื่อแสดง skeleton ในส่วน admin
-- **AuthPage, ProblemExplorerPage, AdminLoginPage**: เรียก `setLoading` ตอนกดปุ่มหรือก่อนเปลี่ยนหน้า (ตามที่ออกแบบในแต่ละหน้า)
+- **App.tsx:** Before `navigate()` calls `setPageLoading(true)`, then after a short delay `setPageLoading(false)` so a brief skeleton shows on route change.
+- **PageLayout / AdminPageLayout:** Read `loading` from `useLoading()`; when true, show `<GlobalSkeleton />` instead of children.
 
 ---
 
-## 3. Local State (useState ในหน้า/คอมโพเนนต์)
+## 3. Local state (useState in pages/components)
 
-ข้อมูลที่ “ไม่แชร์ข้ามหน้า” เก็บใน **local state** ของหน้านั้นด้วย `useState` (และบางที่ใช้ `useMemo` สำหรับ derived data)
+Data that is not shared across pages lives in **local state** with `useState` (and sometimes `useMemo` for derived data).
 
-### แนวปฏิบัติที่ใช้อยู่
+### Current practice
 
-- **ข้อมูลจาก API**: แต่ละหน้าดึงเองใน `useEffect` แล้วเก็บใน state เช่น `problems`, `users`, `stats`, `submissions`
-- **ฟอร์ม / Modal**: state แยกสำหรับค่าฟอร์ม (เช่น `email`, `password`, `createForm`, `editForm`) และสถานะเปิด/ปิด modal (`showCreateModal`, `showEditModal`, `deleteConfirm`)
-- **Filter / Pagination**: เก็บใน state ของหน้านั้น เช่น `search`, `roleFilter`, `currentPage`, `statusFilter`
-- **สถานะ async**: ใช้ state แยกสำหรับ loading/error เช่น `loading`, `isSubmitting`, `error`, `saving`
+- **API data:** Each page fetches in `useEffect` and stores in state (e.g. `problems`, `users`, `submissions`).
+- **Forms / modals:** Separate state for form values and open/close (e.g. `showCreateModal`, `deleteConfirm`).
+- **Filters / pagination:** In that page’s state (e.g. `search`, `currentPage`, `statusFilter`).
+- **Async state:** Separate state for loading/error (e.g. `loading`, `isSubmitting`, `error`).
 
-### ตัวอย่างการกระจาย state (โดยสรุป)
-
-| หน้า/คอมโพเนนต์ | State หลัก (นอกจาก auth/loading) |
-|------------------|-----------------------------------|
-| AuthPage | mode, email, password, fullName, error, isSubmitting, showPassword |
-| AdminLoginPage | email, password, adminCode, error, isSubmitting |
-| ProblemExplorerPage | difficultyFilter, statusFilter, currentPage, problems, isLoading, progress |
-| ProblemWorkspacePage | state (problem, code), language, activeTab, runResult, isRunning, isSubmitting, submissions, codeByLang, … |
-| AdminDashboardPage | stats, users, feedback, logs, หลาย loading, search, userPage, selectedUser, modal ประกาศ, cpu/memory/storage (UI) |
-| AdminUsersPage | users, loading, search, roleFilter, currentPage, modals, createForm, editForm, saving, deleteConfirm |
-| AdminSubmissionsPage | submissions, loading, statusFilter, userSearch, currentPage |
-| ProblemListPage (admin) | problems, loading, search, diffFilter, currentPage, modals, createForm, importFile, importing, … |
-| ChatBubble | open, messages, input, loading |
-| Navbar | isNotifOpen, announcements, notifLoaded |
-| UserProfilePage | fullName, avatarUrl, isSaving |
-
-ไม่มีการแชร์ state เหล่านี้ข้ามหน้าผ่าน global store; ถ้าจะใช้ซ้ำต้องส่งเป็น props หรือดึง API ใหม่ในหน้านั้น
+There is no global sharing of this state; reuse is via props or refetch on the target page.
 
 ---
 
-## 4. Data Flow สรุป
+## 4. Data flow summary
 
 ### Auth
 
-1. **เปิดแอป:** `App.tsx` เรียก `authApi.refresh()` (ใช้ HttpOnly cookie) → ได้ accessToken → `authApi.getMe(accessToken)` → `setAuth(user, accessToken)`  
-2. **Login/Register/Admin login:** หน้าเรียก `useAuth().login(...)` (หรือ register/adminLogin) → `authApi` → `setAuth(user, accessToken)`  
-3. **Logout:** เรียก `authApi.logout()` แล้ว `clearAuth()`  
-4. **Token หมดอายุ (401):** บาง API ส่ง event `insightcode:auth-expired` → App listener เรียก `clearAuth()` + toast + `navigate('/')`
+1. **App load:** `App.tsx` calls `authApi.refresh()` (HttpOnly cookie) → gets accessToken → `authApi.getMe(accessToken)` → `setAuth(user, accessToken)`.
+2. **Login/Register/Admin login:** Page calls `useAuth().login(...)` (or register/adminLogin) → `authApi` → `setAuth(user, accessToken)`.
+3. **Logout:** Call `authApi.logout()` then `clearAuth()`.
+4. **Token expired (401):** Some API responses dispatch `insightcode:auth-expired` → App listener runs `clearAuth()` + toast + `navigate('/')`.
 
-### ข้อมูลแต่ละหน้า
+### Per-page data
 
-- หน้าเรียก API ผ่าน service (เช่น `adminApi`, `authApi`) โดยใช้ `accessToken` จาก `useAuthStore().accessToken`
-- ผลลัพธ์เก็บใน state ของหน้านั้น (useState)
-- ไม่มี layer แคชหรือ normalized store ร่วมกัน; เปลี่ยนหน้ากลับมาอาจดึง API ใหม่
+- Page calls API via services (e.g. `adminApi`, `authApi`) with `accessToken` from `useAuthStore().accessToken`.
+- Result is stored in that page’s state (useState).
+- No shared cache or normalized store; returning to a page may refetch.
 
-### การเปลี่ยนหน้า + Loading
+### Navigation and loading
 
-- ผู้ใช้กดเมนู → `handleNavigate(page)` (หรือเทียบเท่า) → `setPageLoading(true)` → `navigate(...)` → หลังจาก delay สั้นๆ → `setPageLoading(false)`
-- `PageLayout` / `AdminPageLayout` อ่าน `loading` จาก `useLoading()` → แสดง skeleton แทนเนื้อหาเมื่อ `loading === true`
+- User clicks nav → `handleNavigate(page)` → `setPageLoading(true)` → `navigate(...)` → after a short delay → `setPageLoading(false)`.
+- PageLayout / AdminPageLayout read `loading` from `useLoading()` and show skeleton when `loading === true`.
 
 ---
 
-## 5. โครงสร้างไฟล์ที่เกี่ยวกับ State
+## 5. Files involved in state
 
 ```
 Frontend/src/
 ├── store/
 │   └── authStore.ts          # Zustand auth store
 ├── contexts/
-│   └── LoadingContext.tsx    # React Context สำหรับ loading แบบ global
+│   └── LoadingContext.tsx    # Global loading state
 ├── hooks/
-│   └── useAuth.ts            # ห่อ authStore + authApi (login, logout, …)
-├── App.tsx                   # ใช้ authStore + useLoading, route guard, silent refresh
-└── main.tsx                  # LoadingProvider ห่อทั้งแอป
+│   └── useAuth.ts            # Wraps authStore + authApi
+├── App.tsx                   # Uses authStore + useLoading, route guards, silent refresh
+└── main.tsx                  # LoadingProvider wraps app
 ```
 
 ---
 
-## 6. สรุปสั้นๆ
+## 6. Summary
 
-- **Auth**: Zustand store เดียว (`authStore`) + hook `useAuthStore` / `useAuth`  
-- **Loading ระหว่างเปลี่ยนหน้า**: React Context `LoadingContext` + `useLoading`  
-- **ข้อมูลหน้าและ UI อื่น**: ใช้ `useState` (และ `useMemo` ถ้าต้องการ) ในแต่ละหน้า/คอมโพเนนต์ ไม่มี global store สำหรับ server state  
-- **การไหลของข้อมูล**: API → setState ในหน้า; auth ผ่าน store + event `insightcode:auth-expired` สำหรับ session หมดอายุ
+- **Auth:** Single Zustand store (`authStore`) + `useAuthStore` / `useAuth`.
+- **Navigation loading:** React Context `LoadingContext` + `useLoading`.
+- **Page and UI data:** `useState` (and `useMemo` when needed) per page/component; no global server-state store.
+- **Flow:** API → setState in page; auth via store + `insightcode:auth-expired` for session expiry.

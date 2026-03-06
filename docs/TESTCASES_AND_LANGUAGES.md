@@ -1,22 +1,22 @@
-# Test cases กับภาษาที่รองรับ
+# Test cases and supported languages
 
-## โครงสร้างในระบบ
+## Structure in the system
 
-- **โจทย์ 1 ข้อ = ชุด test case 1 ชุด** (ตาราง `problems` + `test_cases`)
-- Test case แต่ละตัวมี `input_data` และ `expected_output` เป็นข้อความ (มักเป็น JSON หรือข้อความที่ทุกภาษารันแล้วเทียบได้)
-- **ไม่ได้แยก test case ต่อภาษา** — ใช้ชุดเดียวกันทุกภาษา เพราะ input/output เป็น data
+- **One problem = one set of test cases** (tables `problems` + `test_cases`)
+- Each test case has `input_data` and `expected_output` as text (often JSON or text comparable across languages)
+- **Test cases are not per-language** — the same set is used for all languages because input/output are data
 
-## ภาษาที่รองรับจริง (รัน/ตรวจได้)
+## Languages actually supported (run / judge)
 
-| ภาษา        | Frontend (เลือกได้) | Backend รัน/ judge |
-|-------------|---------------------|---------------------|
-| JavaScript  | ✅                  | ✅                  |
-| TypeScript  | ✅                  | ✅                  |
-| Python      | ✅                  | ❌ ยังไม่ implement |
-| C++         | ✅                  | ❌ ยังไม่ implement |
-| Java        | ✅                  | ❌ ยังไม่ implement |
-| Go          | ✅                  | ❌ ยังไม่ implement |
+| Language   | Frontend (selectable) | Backend run / judge |
+|------------|-----------------------|----------------------|
+| JavaScript | ✅                    | ✅                   |
+| TypeScript | ✅                    | ✅                   |
+| Python     | ✅                    | ❌ not implemented   |
+| C++        | ✅                    | ❌ not implemented   |
+| Java       | ✅                    | ❌ not implemented   |
+| Go         | ✅                    | ❌ not implemented   |
 
-สรุป: **ตอนนี้โค้ดที่ต้องการเช็คมี test case ไว้เปรียบเทียบแล้ว (ชุดเดียวต่อโจทย์)** และ **ภาษาที่ระบบรัน/เปรียบเทียบได้จริงมีแค่ JavaScript กับ TypeScript** ภาษา Python/C++/Java/Go ฝั่ง frontend มีให้เลือกแต่ backend ยังไม่รัน
+**Summary:** Test cases are defined per problem (one set per problem). The only languages the system actually runs and compares today are **JavaScript and TypeScript**. Python/C++/Java/Go can be selected in the frontend but the backend does not execute them yet.
 
-ถ้าต้องการรองรับหลายภาษา ต้องเพิ่ม executor แต่ละภาษาใน Backend (เช่น run Python ผ่าน child_process หรือ sandbox) โดยยังใช้ชุด test case เดิมได้ (input/expected เหมือนกันทุกภาษา)
+To support more languages, add an executor per language in the Backend (e.g. run Python via child_process or a sandbox), reusing the same test case set (same input/expected for all languages).
