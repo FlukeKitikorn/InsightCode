@@ -4,6 +4,7 @@ import vm from "node:vm";
 import { performance } from "node:perf_hooks";
 import { isDeepStrictEqual } from "node:util";
 import { judgeQueue } from "../queue/judgeQueue.js";
+import { openRouterChat } from "../lib/openrouter.js";
 
 type SupportedLanguage = "javascript" | "typescript";
 
@@ -98,6 +99,63 @@ function analyzeCode(
       : "") +
     (hints.length ? `Insights:\n- ${hints.join("\n- ")}\n` : "Insights:\n- ยังไม่มีสัญญาณผิดปกติ\n");
 
+  return { analysisText, qualityScore };
+}
+
+const LLM_ANALYSIS_SYSTEM = `You are a code reviewer for a programming exercise platform. Analyze the submitted code and give brief, constructive feedback in Thai.
+Consider: correctness (did tests pass?), code clarity, structure, and performance.
+Output format:
+1. First: your analysis text in Thai (2–5 short bullet points or paragraphs).
+2. Last line: only a single integer 0–100 for quality score (e.g. 75).`;
+
+async function analyzeCodeWithLLM(
+  code: string,
+  language: string,
+  evalResult: { passedCount: number; totalCount: number; executionTimeMs: number }
+): Promise<{ analysisText: string; qualityScore: number }> {
+  const userContent = [
+    `Language: ${language}`,
+    `Test result: ${evalResult.passedCount}/${evalResult.totalCount} passed`,
+    `Execution time: ~${evalResult.executionTimeMs} ms`,
+    "",
+    "Code:",
+    "```",
+    code,
+    "```",
+    "",
+    "Reply with your analysis in Thai, then on the last line write only the quality score 0–100.",
+  ].join("\n");
+
+  const raw = await openRouterChat({
+    messages: [
+      { role: "system", content: LLM_ANALYSIS_SYSTEM },
+      { role: "user", content: userContent },
+    ],
+    max_tokens: 600,
+    temperature: 0.3,
+  });
+
+  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  let qualityScore = 50;
+  let analysisText = raw;
+
+  // Parse score: last line only digits, or any line with number 0-100
+  const lastLine = lines[lines.length - 1];
+  if (lastLine) {
+    const onlyNum = /^\d{1,3}$/.exec(lastLine);
+    const numInLine = /\b(\d{1,3})\b/.exec(lastLine);
+    const score = onlyNum
+      ? parseInt(onlyNum[0], 10)
+      : numInLine
+        ? parseInt(numInLine[1], 10)
+        : NaN;
+    if (!Number.isNaN(score)) {
+      qualityScore = Math.max(0, Math.min(100, score));
+      if (onlyNum) analysisText = lines.slice(0, -1).join("\n").trim() || raw;
+    }
+  }
+
+  if (!analysisText) analysisText = raw;
   return { analysisText, qualityScore };
 }
 
@@ -451,11 +509,28 @@ export async function internalJudgeSubmission(req: Request, res: Response): Prom
       },
     });
 
-    const { analysisText, qualityScore } = analyzeCode(submission.code, submission.language, {
-      passedCount: evalResult.passedCount,
-      totalCount: evalResult.totalCount,
-      executionTimeMs: evalResult.executionTimeMs,
-    });
+    let analysisText: string;
+    let qualityScore: number;
+    try {
+      const llmResult = await analyzeCodeWithLLM(submission.code, submission.language, {
+        passedCount: evalResult.passedCount,
+        totalCount: evalResult.totalCount,
+        executionTimeMs: evalResult.executionTimeMs,
+      });
+      analysisText = llmResult.analysisText;
+      qualityScore = llmResult.qualityScore;
+    } catch (llmErr) {
+      // eslint-disable-next-line no-console
+      console.warn("[internalJudgeSubmission] LLM analysis failed, using rule-based fallback", llmErr);
+      const fallback = analyzeCode(submission.code, submission.language, {
+        passedCount: evalResult.passedCount,
+        totalCount: evalResult.totalCount,
+        executionTimeMs: evalResult.executionTimeMs,
+      });
+      analysisText = fallback.analysisText;
+      qualityScore = fallback.qualityScore;
+    }
+
     const aiFeedback = await prisma.aiFeedback.upsert({
       where: { submissionId: submission.id },
       update: {

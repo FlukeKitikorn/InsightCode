@@ -18,7 +18,7 @@ import { openApiSpec } from "./openapi.js";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ─── Logging Middleware (ต้องอยู่บนสุด) ─────────────
+// ─── Logging Middleware ─────────────
 app.use(
   (pinoHttp as unknown as typeof pinoHttp.default)({
     logger,
