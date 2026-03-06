@@ -49,29 +49,6 @@ services:
     volumes:
       - redisinsight_data:/db
 
-  # backend:
-  #   build: ./backend
-  #   ports:
-  #     - "4000:4000"
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   env_file:
-  #     - ./backend/.env
-
-  # worker:
-  #   build: ./worker
-  #   depends_on:
-  #     - postgres
-  #     - redis
-  #   env_file:
-  #     - ./worker/.env
-
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:80"
-
   portainer:
     image: portainer/portainer-ce
     container_name: portainer
