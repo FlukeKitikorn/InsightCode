@@ -15,13 +15,16 @@ Online coding practice platform with automated judging and AI-powered code feedb
 
 ## Tech Stack
 
-| Layer | Tech |
-|------|------|
-| **Frontend** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" height="20"/> React 19 • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vite/vite-original.svg" height="20"/> Vite • React Router • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" height="20"/> Zustand • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg" height="20"/> Tailwind • DaisyUI • CodeMirror |
-| **Backend** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="20"/> Node.js • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" height="20"/> Express • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/prisma/prisma-original.svg" height="20"/> Prisma • <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" height="20"/> PostgreSQL • JWT • BullMQ |
-| **Worker** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="20"/> Node.js • BullMQ |
-| **Queue** | <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg" height="20"/> Redis |
-| **AI** | <img src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/openai.svg" height="20"/> OpenRouter (Gemini / Claude etc.) |
+<p>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" height="40"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vite/vite-original.svg" height="40"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" height="40"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" height="40"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" height="40"/>
+<img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/redis/redis-original.svg" height="40"/>
+</p>
+
+---
 
 ## Project structure
 
@@ -104,9 +107,3 @@ See `.env.example` in each folder for full lists.
 All docs (architecture, PRD, Worker, Redis, Frontend, supported languages, etc.) live in **[docs/](docs/README.md)** — index at [docs/README.md](docs/README.md).
 
 - **OpenAPI (Swagger)** – After starting Backend: [http://localhost:4000/api-docs/openapi.json](http://localhost:4000/api-docs/openapi.json)
-
----
-
-## License
-
-ISC (or as specified in the project)
